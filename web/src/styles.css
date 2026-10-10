@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-heading: 'Bahnschrift SemiBold SemiCondensed', 'Barlow Condensed', 'Gill Sans', Arial, sans-serif;
+  --font-body: 'Inter', Arial, sans-serif;
+}
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body { font-family: var(--font-body); @apply text-gray-900 antialiased; }
+  h1, h2, h3, h4, .label, .nav-item {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  input, select, textarea, button { font-family: inherit; }
+}
+
+@layer components {
+  .heading { font-family: var(--font-heading); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .btn {
+    @apply heading inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-bold
+           transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-vcc-blue text-white hover:bg-vcc-blue-dark; }
+  .btn-primary-lg {
+    @apply btn w-full py-4 text-xl text-white shadow-lg shadow-vcc-blue/30
+           bg-gradient-to-r from-vcc-blue to-vcc-blue-dark hover:from-vcc-blue-dark hover:to-vcc-blue-dark;
+  }
+  .btn-danger-outline { @apply btn border border-vcc-danger/60 bg-white text-vcc-danger hover:bg-red-50; }
+  .btn-ghost { @apply btn text-vcc-blue hover:bg-vcc-blue/10; }
+  .btn-sm { @apply px-3 py-1.5 text-sm; }
+
+  .card-dark { @apply rounded-xl border border-vcc-blue/20 bg-vcc-navy-light/70; }
+  .card-light { @apply rounded-xl border border-gray-200 bg-white shadow-sm; }
+
+  .input {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400
+           outline-none focus:ring-2 focus:ring-vcc-blue;
+  }
+  .input-dark {
+    @apply w-full rounded-lg border border-vcc-blue/30 bg-vcc-navy-light px-4 py-3 text-white placeholder:text-vcc-gray-light/60
+           outline-none focus:ring-2 focus:ring-vcc-blue;
+  }
+  .field-label { @apply heading mb-1.5 block text-sm font-bold text-white; }
+  .field-label-light { @apply heading mb-1.5 block text-sm font-bold text-gray-700; }
+  .field-error { @apply mt-1 text-sm text-red-300; }
+  .field-hint { @apply mt-1 text-xs text-vcc-gray-light; }
+
+  .pill { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold; }
+}
+
+.text-gradient-blue {
+  background: linear-gradient(180deg, #64B5F6 0%, #1E88E5 55%, #1565C0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-hero {
+  background:
+    radial-gradient(60% 50% at 50% 30%, rgba(30, 136, 229, 0.28), transparent 70%),
+    radial-gradient(40% 40% at 85% 80%, rgba(21, 101, 192, 0.25), transparent 70%),
+    #081229;
+}
+
+@keyframes vcc-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+  50% { transform: translate3d(0, -18px, 0) scale(1.08); opacity: 0.85; }
+}
+.animate-drift { animation: vcc-drift 9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .animate-drift { animation: none; } }
+
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* QR canvas is rendered at 1024px for print quality; scale it to its card. */
+.vcc-qr canvas { width: 100% !important; height: auto !important; display: block; }

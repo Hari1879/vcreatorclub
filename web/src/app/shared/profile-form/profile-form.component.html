@@ -1,0 +1,323 @@
+<!-- Progress -->
+<div class="mx-auto mb-2 flex w-full max-w-xs items-center justify-between">
+  @for (s of steps; track s; let last = $last) {
+    <div class="flex flex-col items-center">
+      <span class="grid h-9 w-9 place-items-center rounded-full border-2 transition"
+            [ngClass]="s < step() ? 'border-vcc-blue bg-vcc-blue text-white'
+                     : s === step() ? 'border-vcc-blue-light bg-vcc-blue shadow-[0_0_16px_rgba(30,136,229,0.8)]'
+                     : 'border-vcc-gray-light/60'">
+        @if (s < step()) { <lucide-icon [img]="I.Check" [size]="16" /> }
+      </span>
+      <span class="heading mt-2 text-sm font-bold" [ngClass]="s <= step() ? 'text-white' : 'text-vcc-gray-light/70'">Step {{ s }}</span>
+    </div>
+    @if (!last) { <span class="mb-7 h-px flex-1" [ngClass]="s < step() ? 'bg-vcc-blue' : 'bg-vcc-gray-light/30'"></span> }
+  }
+</div>
+<p class="mb-7 text-center text-vcc-gray-light">Step {{ step() }} of 3</p>
+
+<form [formGroup]="form" (ngSubmit)="next()" novalidate class="space-y-5">
+  <!-- ======================= STEP 1 — PERSONAL DETAILS ======================= -->
+  @if (step() === 1) {
+    <h2 class="text-xl font-bold text-vcc-blue-light">Personal details</h2>
+
+    <div>
+      <label class="field-label" for="fullName">Full name</label>
+      <input id="fullName" class="input" formControlName="fullName" autocomplete="name" placeholder="Enter your full name" maxlength="100" />
+      @if (err('fullName'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </div>
+
+    <div>
+      <label class="field-label" for="email">Email</label>
+      <input id="email" class="input" type="email" formControlName="email" autocomplete="email" inputmode="email" placeholder="Enter your email address" />
+      @if (err('email'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </div>
+
+    <div>
+      <label class="field-label" for="phone">Phone number</label>
+      <div class="flex overflow-hidden rounded-lg bg-white focus-within:ring-2 focus-within:ring-vcc-blue">
+        <span class="flex items-center border-r border-gray-200 px-4 font-medium text-gray-900">+91</span>
+        <input id="phone" class="w-full px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400" type="tel"
+               formControlName="phone" (input)="digitsOnly('phone')" autocomplete="tel-national" inputmode="numeric"
+               maxlength="10" placeholder="Enter your phone number" />
+      </div>
+      @if (err('phone'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </div>
+
+    <div>
+      <label class="field-label" for="city">City</label>
+      <input id="city" class="input" formControlName="city" autocomplete="address-level2" placeholder="Enter your city" maxlength="80" />
+      @if (err('city'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </div>
+
+    <fieldset>
+      <legend class="field-label">How should the VCC team coordinate with you?</legend>
+      <div class="grid grid-cols-2 gap-3">
+        @for (o of [{ v: 'direct', l: 'Directly with me' }, { v: 'manager', l: 'Through my manager' }]; track o.v) {
+          <label class="cursor-pointer rounded-lg border px-4 py-3 text-center text-sm font-medium transition"
+                 [ngClass]="v().coordinationMode === o.v ? 'border-vcc-blue bg-vcc-blue/20 text-white' : 'border-vcc-blue/30 text-vcc-gray-light'">
+            <input type="radio" class="sr-only" formControlName="coordinationMode" [value]="o.v" />{{ o.l }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    @if (v().coordinationMode === 'manager') {
+      <div class="card-dark space-y-4 p-4">
+        <div>
+          <label class="field-label" for="managerName">Manager name</label>
+          <input id="managerName" class="input" formControlName="managerName" placeholder="Your manager's name" maxlength="100" />
+          @if (err('managerName'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+        </div>
+        <div>
+          <label class="field-label" for="managerContact">Manager contact</label>
+          <input id="managerContact" class="input" formControlName="managerContact" placeholder="Phone number or email" maxlength="120" />
+          @if (err('managerContact'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ======================= STEP 2 — SOCIAL MEDIA ======================= -->
+  @if (step() === 2) {
+    <h2 class="text-xl font-bold text-vcc-blue-light">Social media</h2>
+
+    <fieldset>
+      <legend class="field-label">What's your core platform?</legend>
+      <div class="flex flex-wrap gap-2">
+        @for (p of PLATFORMS; track p.value) {
+          <button type="button" (click)="setCore(p.value)"
+                  class="rounded-full border px-4 py-2 text-sm font-medium transition"
+                  [ngClass]="v().corePlatform === p.value ? 'border-vcc-blue bg-vcc-blue text-white' : 'border-vcc-blue/40 text-vcc-gray-light hover:border-vcc-blue'">
+            {{ p.label }}
+          </button>
+        }
+      </div>
+      @if (err('corePlatform'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </fieldset>
+
+    <fieldset>
+      <legend class="field-label">Other platforms you're active on</legend>
+      <div class="flex flex-wrap gap-2">
+        @for (p of PLATFORMS; track p.value) {
+          @if (p.value !== v().corePlatform) {
+            <button type="button" (click)="togglePlatform(p.value)"
+                    class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition"
+                    [ngClass]="active().has(p.value) ? 'border-vcc-blue-light bg-vcc-blue/20 text-white' : 'border-vcc-blue/30 text-vcc-gray-light'">
+              <lucide-icon [img]="active().has(p.value) ? I.Check : I.Plus" [size]="14" />{{ p.label }}
+            </button>
+          }
+        }
+      </div>
+    </fieldset>
+
+    @if (err('platforms'); as e) { <p class="field-error -mb-2" data-error>{{ e }}</p> }
+
+    @for (p of PLATFORMS; track p.value) {
+      @if (active().has(p.value)) {
+        <div class="card-dark space-y-4 p-4" [class.!border-vcc-blue]="v().corePlatform === p.value">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-white">{{ p.label }}</h3>
+            @if (v().corePlatform === p.value) { <span class="pill heading bg-vcc-blue text-white">Core</span> }
+          </div>
+          @switch (p.value) {
+            @case ('instagram') {
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="field-label" for="igh">Instagram handle</label>
+                  <input id="igh" class="input" formControlName="instagramHandle" (blur)="prefixAt('instagramHandle')" placeholder="@yourhandle" autocapitalize="off" maxlength="60" />
+                </div>
+                <div>
+                  <label class="field-label" for="igf">Followers</label>
+                  <input id="igf" class="input" type="number" min="0" inputmode="numeric" formControlName="instagramFollowers" placeholder="e.g. 25000" />
+                </div>
+              </div>
+              <div>
+                <label class="field-label" for="igu">Profile URL <span class="normal-case text-vcc-gray-light">(optional)</span></label>
+                <input id="igu" class="input" type="url" formControlName="instagramUrl" placeholder="https://instagram.com/yourhandle" autocapitalize="off" maxlength="300" />
+              </div>
+            }
+            @case ('youtube') {
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="field-label" for="yth">YouTube handle</label>
+                  <input id="yth" class="input" formControlName="youtubeHandle" (blur)="prefixAt('youtubeHandle')" placeholder="@yourchannel" autocapitalize="off" maxlength="100" />
+                </div>
+                @if (v().youtubeHandle || v().youtubeUrl) {
+                  <div>
+                    <label class="field-label" for="yts">Subscribers</label>
+                    <input id="yts" class="input" type="number" min="0" inputmode="numeric" formControlName="youtubeSubscribers" placeholder="e.g. 10000" />
+                  </div>
+                }
+              </div>
+              <div>
+                <label class="field-label" for="ytu">Channel URL <span class="normal-case text-vcc-gray-light">(optional)</span></label>
+                <input id="ytu" class="input" type="url" formControlName="youtubeUrl" placeholder="https://youtube.com/@yourchannel" autocapitalize="off" maxlength="300" />
+              </div>
+            }
+            @case ('facebook') {
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="field-label" for="fbu">Page / profile URL</label>
+                  <input id="fbu" class="input" type="url" formControlName="facebookUrl" placeholder="https://facebook.com/yourpage" autocapitalize="off" maxlength="300" />
+                </div>
+                <div>
+                  <label class="field-label" for="fbf">Followers</label>
+                  <input id="fbf" class="input" type="number" min="0" inputmode="numeric" formControlName="facebookFollowers" placeholder="e.g. 8000" />
+                </div>
+              </div>
+            }
+            @case ('linkedin') {
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="field-label" for="liu">Profile URL</label>
+                  <input id="liu" class="input" type="url" formControlName="linkedinUrl" placeholder="https://linkedin.com/in/you" autocapitalize="off" maxlength="300" />
+                </div>
+                <div>
+                  <label class="field-label" for="lif">Followers</label>
+                  <input id="lif" class="input" type="number" min="0" inputmode="numeric" formControlName="linkedinFollowers" placeholder="e.g. 3000" />
+                </div>
+              </div>
+            }
+            @case ('threads') {
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="field-label" for="thh">Threads handle</label>
+                  <input id="thh" class="input" formControlName="threadsHandle" (blur)="prefixAt('threadsHandle')" placeholder="@yourhandle" autocapitalize="off" maxlength="60" />
+                </div>
+                <div>
+                  <label class="field-label" for="thf">Followers</label>
+                  <input id="thf" class="input" type="number" min="0" inputmode="numeric" formControlName="threadsFollowers" placeholder="e.g. 5000" />
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+    }
+
+    <div>
+      <label class="field-label" for="other">Other platforms <span class="normal-case text-vcc-gray-light">(optional)</span></label>
+      <input id="other" class="input" formControlName="otherPlatforms" placeholder="e.g. Moj, ShareChat, X" maxlength="200" />
+    </div>
+
+    <div>
+      <label class="field-label" for="cat">Main content category</label>
+      <select id="cat" class="input" formControlName="contentCategory">
+        <option value="" disabled>Select a category</option>
+        @for (c of CATEGORIES; track c) { <option [value]="c">{{ c }}</option> }
+      </select>
+      @if (err('contentCategory'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </div>
+
+    <fieldset>
+      <legend class="field-label">Content language</legend>
+      <div class="flex flex-wrap gap-2">
+        @for (l of LANGUAGES; track l) {
+          <button type="button" (click)="toggleIn('contentLanguages', l)"
+                  class="rounded-full border px-3 py-1.5 text-sm transition"
+                  [ngClass]="v().contentLanguages.includes(l) ? 'border-vcc-blue bg-vcc-blue text-white' : 'border-vcc-blue/30 text-vcc-gray-light'">
+            {{ l }}
+          </button>
+        }
+      </div>
+      <p class="field-hint">Choose all that apply.</p>
+      @if (err('contentLanguages'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </fieldset>
+  }
+
+  <!-- ======================= STEP 3 — CONTENT PROFILE ======================= -->
+  @if (step() === 3) {
+    <h2 class="text-xl font-bold text-vcc-blue-light">Content profile</h2>
+
+    <fieldset>
+      <legend class="field-label">Content types</legend>
+      <div class="grid grid-cols-2 gap-2">
+        @for (t of TYPES; track t) {
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition"
+                 [ngClass]="v().contentTypes.includes(t) ? 'border-vcc-blue bg-vcc-blue/20 text-white' : 'border-vcc-blue/30 text-vcc-gray-light'">
+            <input type="checkbox" class="h-4 w-4 accent-vcc-blue" [checked]="v().contentTypes.includes(t)" (change)="toggleIn('contentTypes', t)" />
+            {{ t }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <div>
+      <label class="field-label" for="bio">About you</label>
+      <textarea id="bio" class="input min-h-28" formControlName="bio" maxlength="300" rows="4"
+                placeholder="Tell us about your content and why you'd like to join VCC"></textarea>
+      <p class="field-hint text-right">{{ bioLength() }}/300</p>
+      @if (err('bio'); as e) { <p class="field-error" data-error>{{ e }}</p> }
+    </div>
+
+    <fieldset class="card-dark p-4">
+      <legend class="sr-only">Your rates</legend>
+      <p class="field-label !mb-0">Your rates <span class="normal-case text-vcc-gray-light">(optional)</span></p>
+      <p class="field-hint !mt-0 mb-3">Your usual price per deliverable, in ₹. This helps us plan suitable collaborations.</p>
+      <div class="grid grid-cols-2 gap-3">
+        @for (r of [{ c: 'rateStory', l: 'Story' }, { c: 'ratePost', l: 'Post' }, { c: 'rateReel', l: 'Reel' }, { c: 'rateTvc', l: 'TVC' }]; track r.c) {
+          <div>
+            <label class="mb-1 block text-sm text-vcc-gray-light" [for]="r.c">{{ r.l }}</label>
+            <div class="flex overflow-hidden rounded-lg bg-white focus-within:ring-2 focus-within:ring-vcc-blue">
+              <span class="flex items-center px-3 text-gray-500">₹</span>
+              <input [id]="r.c" class="w-full py-3 pr-3 text-gray-900 outline-none" type="number" min="0" inputmode="numeric" [formControlName]="r.c" placeholder="0" />
+            </div>
+          </div>
+        }
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend class="field-label">Have you worked with Vivo before?</legend>
+      <div class="grid grid-cols-2 gap-3">
+        @for (o of [{ v: true, l: 'Yes' }, { v: false, l: 'No' }]; track o.l) {
+          <label class="cursor-pointer rounded-lg border px-4 py-3 text-center text-sm font-medium transition"
+                 [ngClass]="v().workedWithVivo === o.v ? 'border-vcc-blue bg-vcc-blue/20 text-white' : 'border-vcc-blue/30 text-vcc-gray-light'">
+            <input type="radio" class="sr-only" formControlName="workedWithVivo" [value]="o.v" />{{ o.l }}
+          </label>
+        }
+      </div>
+      @if (v().workedWithVivo) {
+        <textarea class="input mt-3" formControlName="vivoWorkDetails" rows="2" maxlength="300"
+                  placeholder="Briefly tell us about it (campaign, product, year)"></textarea>
+      }
+    </fieldset>
+
+    @if (mode() === 'enroll') {
+      <div class="space-y-3 rounded-xl border border-vcc-blue/30 bg-vcc-navy-light/50 p-4">
+        <label class="flex cursor-pointer items-start gap-3 text-sm text-white">
+          <input type="checkbox" class="mt-0.5 h-5 w-5 shrink-0 accent-vcc-blue" formControlName="consentEnroll" />
+          <span>I agree to enrol in the Vivo Creator Club (VCC) program.</span>
+        </label>
+        @if (err('consentEnroll'); as e) { <p class="field-error !mt-0 pl-8" data-error>{{ e }}</p> }
+        <label class="flex cursor-pointer items-start gap-3 text-sm text-white">
+          <input type="checkbox" class="mt-0.5 h-5 w-5 shrink-0 accent-vcc-blue" formControlName="consentConfidentiality" />
+          <span>I agree to keep any unreleased product or program information shared with me through VCC confidential.</span>
+        </label>
+        @if (err('consentConfidentiality'); as e) { <p class="field-error !mt-0 pl-8" data-error>{{ e }}</p> }
+        <p class="border-t border-vcc-blue/20 pt-3 text-xs text-vcc-gray-light">{{ DISCLAIMER }}</p>
+      </div>
+    }
+  }
+
+  <!-- Action -->
+  <div class="pt-2">
+    <button type="submit" class="btn-primary-lg" [disabled]="busy()">
+      @if (busy()) { <vcc-spinner [size]="22" /> }
+      @else if (step() < 3) { Next <lucide-icon [img]="I.ArrowRight" [size]="22" /> }
+      @else if (mode() === 'edit') { Save changes }
+      @else if (signedIn()) { Submit enrollment }
+      @else {
+        <span class="grid h-7 w-7 place-items-center rounded-full bg-white">
+          <svg viewBox="0 0 48 48" class="h-4 w-4" aria-hidden="true">
+            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+            <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+            <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/>
+          </svg>
+        </span>
+        Submit &amp; sign in with Google
+      }
+    </button>
+  </div>
+</form>
