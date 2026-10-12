@@ -78,6 +78,7 @@ const SERVER_INTERVAL_MS = 30_000; // layer 2
               mode="enroll"
               [initial]="initial()"
               [signedIn]="signedIn()"
+              [enrollmentToken]="token"
               [(step)]="step"
               (changed)="onChanged($event.value, $event.step)"
               (completed)="onCompleted($event)" />
@@ -136,7 +137,7 @@ export class JoinComponent implements OnInit, OnDestroy {
   private now = signal(Date.now());
   private errorText = signal('');
 
-  private token = '';
+  protected token = '';
   private draftId = '';
   private latest: { value: ProfileFormValue; step: number } | null = null;
   private localTimer?: ReturnType<typeof setTimeout>;

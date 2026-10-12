@@ -41,8 +41,8 @@ export class ApiService {
   private del = <T>(url: string) => firstValueFrom(this.http.delete<T>(`/api${url}`));
 
   // auth
-  followerCount = (platform: 'youtube', url: string) =>
-    this.get<{ count: number | null; hidden: boolean }>('/creators/follower-count', { platform, url });
+  followerCount = (platform: 'youtube', url: string, token?: string) =>
+    this.get<{ count: number | null; hidden: boolean }>('/creators/follower-count', { platform, url, token });
   me = () => this.get<Me>('/auth/me');
   logout = () => this.post<{ ok: boolean }>('/auth/logout');
 

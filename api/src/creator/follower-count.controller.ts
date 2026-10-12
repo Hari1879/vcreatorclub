@@ -1,11 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { SessionGuard } from '../auth/session.guard';
+import { SessionOrTokenGuard } from './session-or-token.guard';
 import { FollowerCountQueryDto } from './follower-count.dto';
 import { FollowerCountService } from './follower-count.service';
 
 @Controller('creators')
-@UseGuards(SessionGuard)
+@UseGuards(SessionOrTokenGuard)
 export class FollowerCountController {
   constructor(private readonly followers: FollowerCountService) {}
 

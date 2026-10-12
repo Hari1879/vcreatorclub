@@ -76,6 +76,7 @@ export class ProfileFormComponent implements OnInit {
   mode = input<'enroll' | 'edit'>('enroll');
   initial = input<Partial<ProfileFormValue> | null>(null);
   signedIn = input(false);
+  enrollmentToken = input<string | undefined>(undefined);
   busy = input(false);
   step = model(1);
 
@@ -170,7 +171,7 @@ export class ProfileFormComponent implements OnInit {
     }
     this.ytStatus.set('loading');
     try {
-      const r = await this.api.followerCount('youtube', u);
+      const r = await this.api.followerCount('youtube', u, this.enrollmentToken());
       if (id !== this.ytRequest) return;
       if (r.count === null) {
         this.ytStatus.set(r.hidden ? 'hidden' : 'failed');

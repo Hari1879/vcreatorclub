@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsIn, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export const FOLLOWER_PLATFORMS = ['youtube'] as const;
 export type FollowerPlatform = (typeof FOLLOWER_PLATFORMS)[number];
@@ -14,6 +14,11 @@ export class FollowerCountQueryDto {
   @IsString()
   @MaxLength(300)
   url!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  token?: string;
 }
 
 export interface FollowerCountResult {
