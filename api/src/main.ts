@@ -3,7 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import { json } from 'express';
+import { json, raw } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -14,6 +14,10 @@ async function bootstrap() {
   app.set('trust proxy', 1);
   app.use(helmet());
   app.use(cookieParser());
+  app.use(
+    '/api/admin/campaigns/:id/banner',
+    raw({ type: ['image/png', 'image/jpeg', 'image/webp'], limit: '1mb' }),
+  );
   app.use(json({ limit: '100kb' }));
   app.setGlobalPrefix('api');
   app.useGlobalPipes(

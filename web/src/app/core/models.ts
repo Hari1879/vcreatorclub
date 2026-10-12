@@ -84,6 +84,7 @@ export interface Campaign {
   eligibleTiers: Tier[];
   maxCreators: number | null;
   createdAt: string;
+  bannerUrl?: string | null;
   assignmentCount?: number;
   myAssignmentStatus?: AssignmentStatus;
 }

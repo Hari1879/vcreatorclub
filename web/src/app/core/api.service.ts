@@ -85,6 +85,11 @@ export class ApiService {
   campaign = (id: string) => this.get<CampaignDetail>(`/admin/campaigns/${id}`);
   createCampaign = (body: unknown) => this.post<Campaign>('/admin/campaigns', body);
   updateCampaign = (id: string, body: unknown) => this.put<Campaign>(`/admin/campaigns/${id}`, body);
+  uploadCampaignBanner = (id: string, file: File) =>
+    firstValueFrom(
+      this.http.put<Campaign>(`/api/admin/campaigns/${id}/banner`, file, { headers: { 'Content-Type': file.type } }),
+    );
+  removeCampaignBanner = (id: string) => this.del(`/admin/campaigns/${id}/banner`);
   campaignStatus = (id: string, status: string) => this.post<Campaign>(`/admin/campaigns/${id}/status`, { status });
   deleteCampaign = (id: string) => this.del(`/admin/campaigns/${id}`);
   updateAssignment = (id: string, body: { status?: string; adminNotes?: string }) =>

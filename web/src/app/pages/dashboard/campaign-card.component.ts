@@ -20,6 +20,7 @@ const TYPE_CLS: Record<string, string> = {
   template: `
     @let c = campaign();
     <article class="card-dark overflow-hidden">
+      @if (c.bannerUrl) { <img [src]="c.bannerUrl" alt="" class="h-32 w-full object-cover" /> }
       <div class="flex gap-4 p-4">
         <span class="hidden h-20 w-20 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-vcc-blue-dark to-vcc-navy text-vcc-blue-light xs:grid">
           <lucide-icon [img]="I.Megaphone" [size]="34" />

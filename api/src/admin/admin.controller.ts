@@ -123,6 +123,18 @@ export class AdminController {
     return this.admin.updateCampaign(id, dto);
   }
 
+  @Put('campaigns/:id/banner')
+  @AdminWrite()
+  setBanner(@Param('id', ParseUUIDPipe) id: string, @Body() body: Buffer) {
+    return this.admin.setCampaignBanner(id, body);
+  }
+
+  @Delete('campaigns/:id/banner')
+  @AdminWrite()
+  removeBanner(@Param('id', ParseUUIDPipe) id: string) {
+    return this.admin.removeCampaignBanner(id);
+  }
+
   @Post('campaigns/:id/status')
   @AdminWrite()
   campaignStatus(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CampaignStatusDto) {

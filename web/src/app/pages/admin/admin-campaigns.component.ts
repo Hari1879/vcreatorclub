@@ -61,6 +61,7 @@ const emptyDraft = (): Draft => ({
       <div class="mt-7 grid gap-4 xl:grid-cols-2">
         @for (c of campaigns(); track c.id) {
           <article class="card-light flex flex-col p-5">
+            @if (c.bannerUrl) { <img [src]="c.bannerUrl" alt="" class="-mx-5 -mt-5 mb-4 h-32 max-w-none rounded-t-xl object-cover" style="width: calc(100% + 2.5rem)" /> }
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-xs uppercase tracking-wider text-gray-500">{{ c.product }}</p>
@@ -114,6 +115,19 @@ const emptyDraft = (): Draft => ({
             }
             <label><span class="field-label-light">Deadline</span><input class="input" type="date" [(ngModel)]="d.deadline" /></label>
             <label><span class="field-label-light">Max creators</span><input class="input" type="number" min="1" [(ngModel)]="d.maxCreators" placeholder="No limit" /></label>
+          </div>
+          <div>
+            <span class="field-label-light">Banner</span>
+            @if (bannerPreview(); as src) {
+              <img [src]="src" alt="Campaign banner preview" class="mb-2 max-h-40 w-full rounded-lg border border-gray-200 object-cover" />
+            }
+            <div class="flex items-center gap-3">
+              <input #bannerInput type="file" class="hidden" accept="image/png,image/jpeg,image/webp" (change)="pickBanner($event)" />
+              <button type="button" class="btn-ghost btn-sm" (click)="bannerInput.click()">{{ bannerPreview() ? 'Replace banner' : 'Upload banner' }}</button>
+              @if (bannerPreview()) { <button type="button" class="btn-danger-outline btn-sm" (click)="clearBanner()">Remove</button> }
+              <span class="text-xs text-gray-500">PNG, JPEG or WebP, up to 1 MB. Wide images (e.g. 1200×400) work best.</span>
+            </div>
+            @if (bannerError()) { <p class="mt-1 text-sm text-red-600">{{ bannerError() }}</p> }
           </div>
           <label class="block"><span class="field-label-light">Description</span>
             <textarea class="input" rows="4" maxlength="5000" [(ngModel)]="d.description" placeholder="Brief, key messages, dos and don'ts"></textarea>
@@ -219,6 +233,10 @@ export class AdminCampaignsComponent implements OnInit {
   protected formError = signal<string | null>(null);
   protected d: Draft = emptyDraft();
   protected tagInput = '';
+  protected bannerPreview = signal<string | null>(null);
+  protected bannerError = signal<string | null>(null);
+  private bannerFile: File | null = null;
+  private removeBanner = false;
 
   protected deleteTarget = signal<Campaign | null>(null);
   protected detailOpen = signal(false);
@@ -239,7 +257,33 @@ export class AdminCampaignsComponent implements OnInit {
     }
   }
 
+  private resetBanner(url: string | null) {
+    const cur = this.bannerPreview();
+    if (cur?.startsWith('blob:')) URL.revokeObjectURL(cur);
+    this.bannerFile = null;
+    this.removeBanner = false;
+    this.bannerError.set(null);
+    this.bannerPreview.set(url);
+  }
+
+  protected pickBanner(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return this.bannerError.set('Use a PNG, JPEG or WebP image.');
+    if (file.size > 1024 * 1024) return this.bannerError.set('Banner must be 1 MB or smaller.');
+    this.resetBanner(URL.createObjectURL(file));
+    this.bannerFile = file;
+  }
+
+  protected clearBanner() {
+    this.resetBanner(null);
+    this.removeBanner = true;
+  }
+
   protected openNew() {
+    this.resetBanner(null);
     this.d = emptyDraft();
     this.editingId.set(null);
     this.editingStatus.set('draft');
@@ -248,6 +292,7 @@ export class AdminCampaignsComponent implements OnInit {
   }
 
   protected openEdit(c: Campaign) {
+    this.resetBanner(c.bannerUrl ?? null);
     this.d = {
       title: c.title,
       product: c.product ?? '',
@@ -299,8 +344,17 @@ export class AdminCampaignsComponent implements OnInit {
     this.formError.set(null);
     try {
       const id = this.editingId();
-      if (id) await this.api.updateCampaign(id, body);
-      else await this.api.createCampaign(body);
+      const saved = id ? await this.api.updateCampaign(id, body) : await this.api.createCampaign(body);
+      const cid = saved.id;
+      try {
+        if (this.bannerFile) await this.api.uploadCampaignBanner(cid, this.bannerFile);
+        else if (this.removeBanner && id) await this.api.removeCampaignBanner(cid);
+      } catch (e) {
+        this.formOpen.set(false);
+        await this.load();
+        this.error.set(`Campaign saved, but the banner failed: ${errorMessage(e)}`);
+        return;
+      }
       this.formOpen.set(false);
       await this.load();
     } catch (e) {

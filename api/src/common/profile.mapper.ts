@@ -60,6 +60,9 @@ export function mapCampaign(r: any) {
     eligibleTiers: r.eligible_tiers ?? [],
     maxCreators: r.max_creators,
     createdAt: r.created_at,
+    bannerUrl: r.banner_updated_at
+      ? `/api/campaigns/${r.id}/banner?v=${new Date(r.banner_updated_at).getTime()}`
+      : null,
     assignmentCount: r.assignment_count === undefined ? undefined : Number(r.assignment_count),
     myAssignmentStatus: r.my_assignment_status ?? undefined,
   };

@@ -263,6 +263,28 @@ export class AdminService {
     void this.mail.notifyCampaignOpened(c);
   }
 
+  async setCampaignBanner(id: string, data: Buffer) {
+    const mime = detectImageMime(data);
+    if (!mime) throw new BadRequestException('Banner must be a PNG, JPEG or WebP image up to 1 MB.');
+    await this.db.tx(async (c) => {
+      const res = await c.query('update campaigns set banner_updated_at = now() where id = $1', [id]);
+      if (!res.rowCount) throw new NotFoundException('Campaign not found.');
+      await c.query(
+        `insert into campaign_banners (campaign_id, mime, data) values ($1, $2, $3)
+         on conflict (campaign_id) do update set mime = excluded.mime, data = excluded.data`,
+        [id, mime, data],
+      );
+    });
+    return mapCampaign(await this.db.one('select * from campaigns where id = $1', [id]));
+  }
+
+  async removeCampaignBanner(id: string) {
+    await this.db.query('delete from campaign_banners where campaign_id = $1', [id]);
+    const res = await this.db.query('update campaigns set banner_updated_at = null where id = $1 returning id', [id]);
+    if (!res.length) throw new NotFoundException('Campaign not found.');
+    return { ok: true };
+  }
+
   async deleteCampaign(id: string) {
     const res = await this.db.query('delete from campaigns where id = $1 returning id', [id]);
     if (!res.length) throw new NotFoundException();
@@ -446,4 +468,13 @@ function mapToken(r: any) {
     state: r.state,
     createdAt: r.created_at,
   };
+}
+
+/** Sniff the real image type from magic bytes rather than trusting the client. */
+export function detectImageMime(b: Buffer): string | null {
+  if (!Buffer.isBuffer(b) || b.length < 12 || b.length > 1024 * 1024) return null;
+  if (b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') return 'image/webp';
+  return null;
 }
