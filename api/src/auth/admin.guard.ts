@@ -15,6 +15,10 @@ import { AdminContext } from './auth.types';
 export const ADMIN_WRITE = 'vcc_admin_write';
 export const AdminWrite = () => SetMetadata(ADMIN_WRITE, true);
 
+/** Mark a route as restricted to super admins. */
+export const SUPER_ADMIN_ONLY = 'vcc_super_admin_only';
+export const SuperAdminOnly = () => SetMetadata(SUPER_ADMIN_ONLY, true);
+
 /** Requires sign-in AND a row in admin_users. */
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -35,6 +39,13 @@ export class AdminGuard implements CanActivate {
       throw new ForbiddenException(
         'Access denied. This area is restricted to authorised VCC team members.',
       );
+    }
+    const superOnly = this.reflector.getAllAndOverride<boolean>(
+      SUPER_ADMIN_ONLY,
+      [ctx.getHandler(), ctx.getClass()],
+    );
+    if (superOnly && admin.role !== 'super_admin') {
+      throw new ForbiddenException('Only super admins can manage users.');
     }
     const isWrite = this.reflector.getAllAndOverride<boolean>(ADMIN_WRITE, [
       ctx.getHandler(),
