@@ -1,8 +1,13 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { SessionGuard } from '../auth/session.guard';
+import { IsBoolean } from 'class-validator';
 import { ProfileDto } from '../common/profile.dto';
 import { CreatorService } from './creator.service';
+
+class EmailPreferencesDto {
+  @IsBoolean() emailOptIn!: boolean;
+}
 
 /** Everything here is scoped to the signed-in creator's own rows. */
 @Controller('me')
@@ -23,6 +28,11 @@ export class CreatorController {
   @Put('profile')
   updateProfile(@Req() req: Request, @Body() dto: ProfileDto) {
     return this.creator.updateProfile(req.sessionUser!.id, dto);
+  }
+
+  @Put('email-preferences')
+  emailPreferences(@Req() req: Request, @Body() dto: EmailPreferencesDto) {
+    return this.creator.setEmailOptIn(req.sessionUser!.id, dto.emailOptIn);
   }
 
   @Get('campaigns')

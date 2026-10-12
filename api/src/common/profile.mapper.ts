@@ -42,6 +42,7 @@ export function mapProfile(r: any) {
     enrolledAt: r.enrolled_at,
     approvedAt: r.approved_at,
     adminNotes: r.admin_notes,
+    emailOptIn: r.email_opt_in ?? true,
   };
 }
 

@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { randomBytes } from 'crypto';
 import { PoolClient } from 'pg';
 import { DbService } from '../db/db.service';
+import { MailService } from '../mail/mail.service';
 import { mapCampaign, mapProfile } from '../common/profile.mapper';
 import {
   AssignmentUpdateDto,
@@ -21,7 +22,10 @@ const TIER_LABEL: Record<string, string> = {
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly db: DbService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly mail: MailService,
+  ) {}
 
   // ------------------------------------------------------------------ stats
   async stats() {
@@ -107,7 +111,7 @@ export class AdminService {
   }
 
   async approve(adminId: string, ids: string[]) {
-    return this.db.tx(async (c) => {
+    const out = await this.db.tx(async (c) => {
       const res = await c.query(
         `update creator_profiles
             set status = 'approved', approved_at = now(), approved_by = $2
@@ -124,12 +128,14 @@ export class AdminService {
           'approval',
         );
       }
-      return { approved: res.rowCount };
+      return { approved: res.rowCount, ids: res.rows.map((r) => r.id as string) };
     });
+    void this.mail.notifyApproved(out.ids);
+    return { approved: out.approved };
   }
 
   async reject(id: string, note?: string) {
-    return this.db.tx(async (c) => {
+    const out = await this.db.tx(async (c) => {
       const res = await c.query(
         `update creator_profiles
             set status = 'rejected',
@@ -150,10 +156,13 @@ export class AdminService {
       );
       return { ok: true };
     });
+    void this.mail.notifyRejected(id, note);
+    return out;
   }
 
   async updateCreator(id: string, dto: UpdateCreatorDto) {
-    return this.db.tx(async (c) => {
+    let tierChanged = false;
+    const profile = await this.db.tx(async (c) => {
       const before = await c.query('select tier, status from creator_profiles where id = $1 for update', [id]);
       if (!before.rowCount) throw new NotFoundException();
       const sets: string[] = [];
@@ -175,9 +184,12 @@ export class AdminService {
         .rows[0];
       if (dto.tier && dto.tier !== before.rows[0].tier && row.status === 'approved') {
         await this.notify(c, id, 'Tier updated', `Your VCC tier is now ${TIER_LABEL[dto.tier]}.`, 'info');
+        tierChanged = true;
       }
       return mapProfile(row);
     });
+    if (tierChanged && dto.tier) void this.mail.notifyTierChanged(id, dto.tier);
+    return profile;
   }
 
   // -------------------------------------------------------------- campaigns
@@ -248,6 +260,7 @@ export class AdminService {
         c.eligible_tiers,
       ],
     );
+    void this.mail.notifyCampaignOpened(c);
   }
 
   async deleteCampaign(id: string) {
@@ -284,7 +297,8 @@ export class AdminService {
   }
 
   async updateAssignment(id: string, dto: AssignmentUpdateDto) {
-    return this.db.tx(async (c) => {
+    let emailStatus: { creatorId: string; title: string; status: string } | null = null;
+    const result = await this.db.tx(async (c) => {
       const prev = await c.query(
         `select a.status, a.creator_id, c.title from campaign_assignments a
            join campaigns c on c.id = a.campaign_id where a.id = $1 for update of a`,
@@ -312,10 +326,18 @@ export class AdminService {
           completed: `Your work on "${p.title}" has been marked complete. Thank you!`,
           cancelled: `Your participation in "${p.title}" has been cancelled.`,
         };
-        if (msg[dto.status]) await this.notify(c, p.creator_id, 'Campaign update', msg[dto.status], 'campaign');
+        if (msg[dto.status]) {
+          await this.notify(c, p.creator_id, 'Campaign update', msg[dto.status], 'campaign');
+          emailStatus = { creatorId: p.creator_id, title: p.title, status: dto.status };
+        }
       }
       return { id: row.id, status: row.status };
     });
+    if (emailStatus) {
+      const e = emailStatus as { creatorId: string; title: string; status: string };
+      void this.mail.notifyAssignmentUpdate(e.creatorId, e.title, e.status);
+    }
+    return result;
   }
 
   // ----------------------------------------------------------------- tokens
@@ -360,18 +382,43 @@ export class AdminService {
     if (dto.allApproved) {
       const res = await this.db.query(
         `insert into notifications (creator_id, title, message, type)
-         select id, $1, $2, $3 from creator_profiles where status = 'approved' returning id`,
+         select id, $1, $2, $3 from creator_profiles where status = 'approved' returning creator_id`,
         [dto.title, dto.message, dto.type],
       );
+      this.emailCustom(dto, res.map((r) => r.creator_id));
       return { sent: res.length };
     }
     if (!dto.creatorIds?.length) throw new BadRequestException('Choose at least one creator.');
     const res = await this.db.query(
       `insert into notifications (creator_id, title, message, type)
-       select id, $2, $3, $4 from creator_profiles where id = any($1::uuid[]) returning id`,
+       select id, $2, $3, $4 from creator_profiles where id = any($1::uuid[]) returning creator_id`,
       [dto.creatorIds, dto.title, dto.message, dto.type],
     );
+    this.emailCustom(dto, res.map((r) => r.creator_id));
     return { sent: res.length };
+  }
+
+  private emailCustom(dto: SendNotificationDto, creatorIds: string[]) {
+    if (dto.sendEmail === true) void this.mail.notifyCustom(creatorIds, dto.title, dto.message);
+  }
+
+  async creatorEmails(id: string) {
+    const rows = await this.db.query(
+      `select id, to_email, template, subject, status, provider_id, error, created_at, sent_at
+         from email_log where creator_id = $1 order by created_at desc limit 20`,
+      [id],
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      to: r.to_email,
+      template: r.template,
+      subject: r.subject,
+      status: r.status,
+      providerId: r.provider_id,
+      error: r.error,
+      createdAt: r.created_at,
+      sentAt: r.sent_at,
+    }));
   }
 
   // ------------------------------------------------------------------- seed

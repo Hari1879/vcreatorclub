@@ -17,6 +17,8 @@ import { Request, Response } from 'express';
 import { AdminGuard, AdminWrite } from '../auth/admin.guard';
 import { AdminService } from './admin.service';
 import { CsvExportService } from './csv-export.service';
+import { MailService } from '../mail/mail.service';
+import * as tpl from '../mail/templates';
 import {
   ApproveDto,
   AssignmentUpdateDto,
@@ -36,6 +38,7 @@ export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly csv: CsvExportService,
+    private readonly mail: MailService,
   ) {}
 
   @Get('me')
@@ -72,6 +75,11 @@ export class AdminController {
   @Get('creators/:id')
   creator(@Param('id', ParseUUIDPipe) id: string) {
     return this.admin.getCreator(id);
+  }
+
+  @Get('creators/:id/emails')
+  creatorEmails(@Param('id', ParseUUIDPipe) id: string) {
+    return this.admin.creatorEmails(id);
   }
 
   @Post('creators/approve')
@@ -156,5 +164,15 @@ export class AdminController {
   @AdminWrite()
   notify(@Body() dto: SendNotificationDto) {
     return this.admin.sendNotification(dto);
+  }
+
+  // ---- email
+  @Post('email/test')
+  @AdminWrite()
+  async testEmail(@Req() req: Request) {
+    const { id: _id, name, email } = req.admin!;
+    const content = tpl.custom(name, 'VCC test email', 'This is a test email from the VCC Creator Portal.');
+    const { status } = await this.mail.send({ to: email, template: 'test', ...content });
+    return { status };
   }
 }

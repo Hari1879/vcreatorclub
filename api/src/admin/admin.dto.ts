@@ -93,4 +93,5 @@ export class SendNotificationDto {
   @trim() @IsString() @Length(2, 120) title!: string;
   @trim() @IsString() @Length(2, 1000) message!: string;
   @IsIn(NOTIFICATION_TYPES as unknown as string[]) type!: string;
+  @IsOptional() @IsBoolean() sendEmail?: boolean;
 }

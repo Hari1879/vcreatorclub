@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DbService } from '../db/db.service';
+import { MailService } from '../mail/mail.service';
 import {
   SubmitEnrollmentDto,
   corePlatformError,
@@ -17,7 +18,10 @@ export type TokenState = 'valid' | 'invalid' | 'expired' | 'exhausted';
 
 @Injectable()
 export class EnrollmentService {
-  constructor(private readonly db: DbService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly mail: MailService,
+  ) {}
 
   async tokenState(token: string): Promise<{ state: TokenState; label?: string }> {
     if (!/^vcc-[a-f0-9]{32}$/.test(token ?? '')) return { state: 'invalid' };
@@ -69,7 +73,7 @@ export class EnrollmentService {
     const coreErr = corePlatformError(dto);
     if (coreErr) throw new BadRequestException(coreErr);
 
-    return this.db.tx(async (c) => {
+    const result = await this.db.tx(async (c) => {
       const existing = await c.query('select status from creator_profiles where id = $1', [userId]);
       if (existing.rowCount) {
         throw new ConflictException({
@@ -111,5 +115,8 @@ export class EnrollmentService {
       }
       return { ok: true, status: 'pending' };
     });
+    void this.mail.notifyEnrollmentReceived(userId);
+    void this.mail.notifyAdminsOfEnrollment(userId);
+    return result;
   }
 }

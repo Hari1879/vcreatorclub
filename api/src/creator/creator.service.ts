@@ -42,6 +42,15 @@ export class CreatorService {
     return mapProfile(row);
   }
 
+  async setEmailOptIn(userId: string, emailOptIn: boolean) {
+    const row = await this.db.one(
+      'update creator_profiles set email_opt_in = $2 where id = $1 returning email_opt_in',
+      [userId, emailOptIn],
+    );
+    if (!row) throw new NotFoundException('No VCC enrollment found for this account.');
+    return { emailOptIn: row.email_opt_in as boolean };
+  }
+
   async summary(userId: string) {
     const profile = await this.profileRow(userId);
     if (profile.status !== 'approved') return { profile: mapProfile(profile) };
