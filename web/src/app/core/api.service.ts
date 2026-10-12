@@ -7,6 +7,7 @@ import {
   Campaign,
   CampaignDetail,
   CreatorDetail,
+  EmailLog,
   EnrollmentToken,
   Me,
   Paged,
@@ -64,6 +65,7 @@ export class ApiService {
   myCampaigns = () => this.get<Campaign[]>('/me/campaigns');
   interest = (id: string) => this.post<{ ok: boolean; status: string }>(`/me/campaigns/${id}/interest`);
   notifications = () => this.get<AppNotification[]>('/me/notifications');
+  setEmailPreference = (emailOptIn: boolean) => this.put<{ emailOptIn: boolean }>('/me/email-preferences', { emailOptIn });
   markRead = (id: string) => this.post(`/me/notifications/${id}/read`);
   markAllRead = () => this.post('/me/notifications/read-all');
 
@@ -77,6 +79,8 @@ export class ApiService {
   reject = (id: string, note?: string) => this.post(`/admin/creators/${id}/reject`, { note: note || undefined });
   updateCreator = (id: string, body: { tier?: string; status?: string; adminNotes?: string | null }) =>
     this.patch<Profile>(`/admin/creators/${id}`, body);
+  creatorEmails = (id: string) => this.get<EmailLog[]>(`/admin/creators/${id}/emails`);
+  sendTestEmail = () => this.post<{ status: string }>('/admin/email/test');
   campaigns = () => this.get<Campaign[]>('/admin/campaigns');
   campaign = (id: string) => this.get<CampaignDetail>(`/admin/campaigns/${id}`);
   createCampaign = (body: unknown) => this.post<Campaign>('/admin/campaigns', body);
@@ -95,5 +99,6 @@ export class ApiService {
     title: string;
     message: string;
     type: string;
+    sendEmail?: boolean;
   }) => this.post<{ sent: number }>('/admin/notifications', body);
 }

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { ALL_TIERS, PLATFORMS, TIER_META, formatCount } from '../../core/constants';
-import { CreatorDetail, Paged, Profile, ProfileStatus, Tier } from '../../core/models';
+import { CreatorDetail, EmailLog, Paged, Profile, ProfileStatus, Tier } from '../../core/models';
 import { I } from '../../shared/icons';
 import { SpinnerComponent, StatusPillComponent, TierBadgeComponent } from '../../shared/ui.components';
 import { KpiComponent, ModalComponent } from './admin-ui';
@@ -142,6 +142,7 @@ import { coreFollowers } from './admin-dashboard.component';
     @if (rejectTarget(); as r) {
       <vcc-modal title="Reject application" (closed)="rejectTarget.set(null)">
         <p class="text-gray-700">Reject <strong>{{ r.fullName }}</strong>? They'll receive a notification.</p>
+        <p class="mt-1 text-sm text-gray-500">The creator will be notified in the app and by email.</p>
         <label class="field-label-light mt-4" for="rn">Note to creator (optional)</label>
         <textarea id="rn" class="input" rows="3" maxlength="500" [(ngModel)]="rejectNote" placeholder="Optional reason shared with the creator"></textarea>
         <div class="mt-5 flex justify-end gap-3">
@@ -171,6 +172,7 @@ import { coreFollowers } from './admin-dashboard.component';
             <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
               <div><dt class="text-gray-500">Email</dt><dd class="break-all">{{ d.email }}</dd></div>
               <div><dt class="text-gray-500">Phone</dt><dd>+91 {{ d.phone }}</dd></div>
+              <div><dt class="text-gray-500">Email updates</dt><dd>{{ d.emailOptIn ? 'On' : 'Off' }}</dd></div>
               <div><dt class="text-gray-500">City</dt><dd>{{ d.city }}</dd></div>
               <div><dt class="text-gray-500">Coordinate</dt><dd>{{ d.coordinationMode === 'manager' ? 'Via manager' : 'Directly' }}</dd></div>
               @if (d.coordinationMode === 'manager') {
@@ -248,6 +250,9 @@ import { coreFollowers } from './admin-dashboard.component';
                 <h3 class="text-lg font-bold text-vcc-navy">Send notification</h3>
                 <input class="input mt-3" [(ngModel)]="notifTitle" maxlength="120" placeholder="Title" />
                 <textarea class="input mt-2" rows="3" [(ngModel)]="notifMessage" maxlength="1000" placeholder="Message"></textarea>
+                <label class="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" [(ngModel)]="notifEmail" /> Also send as email
+                </label>
                 <div class="mt-2 flex items-center gap-3">
                   <select class="input w-40" [(ngModel)]="notifType">
                     <option value="info">Info</option><option value="campaign">Campaign</option><option value="approval">Approval</option><option value="alert">Alert</option>
@@ -259,6 +264,21 @@ import { coreFollowers } from './admin-dashboard.component';
                 </div>
               </div>
             }
+
+            <div class="rounded-xl border border-gray-200 p-4">
+              <h3 class="heading text-sm tracking-wider text-gray-600">EMAILS</h3>
+              @for (m of emails(); track m.id) {
+                <div class="mt-3 flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="truncate font-medium text-gray-900">{{ m.subject }}</p>
+                    <p class="text-xs text-gray-500">{{ ago(m.sentAt ?? m.createdAt) }}</p>
+                  </div>
+                  <span class="pill shrink-0 px-2 py-0.5 text-xs capitalize" [class]="emailPill(m.status)" [attr.title]="m.status === 'failed' ? m.error : null">{{ m.status }}</span>
+                </div>
+              } @empty {
+                <p class="mt-3 text-gray-500">No emails sent yet.</p>
+              }
+            </div>
             @if (detailError()) { <p class="rounded-lg bg-red-50 px-4 py-2 text-red-700">{{ detailError() }}</p> }
           </div>
         }
@@ -300,6 +320,8 @@ export class AdminCreatorsComponent implements OnInit {
   protected notifTitle = '';
   protected notifMessage = '';
   protected notifType = 'info';
+  protected notifEmail = true;
+  protected emails = signal<EmailLog[]>([]);
   protected notifMsg = signal('');
 
   protected exportCsv() {
@@ -431,6 +453,8 @@ export class AdminCreatorsComponent implements OnInit {
     this.detailError.set(null);
     this.detailMsg.set('');
     this.notifMsg.set('');
+    this.emails.set([]);
+    this.notifEmail = true;
     this.notifTitle = '';
     this.notifMessage = '';
     try {
@@ -439,6 +463,7 @@ export class AdminCreatorsComponent implements OnInit {
       this.editTier = d.tier;
       this.editStatus = d.status;
       this.editNotes = d.adminNotes ?? '';
+      void this.loadEmails(id);
     } catch (e) {
       this.detailError.set(errorMessage(e));
     }
@@ -468,14 +493,40 @@ export class AdminCreatorsComponent implements OnInit {
     this.busy.set(true);
     this.detailError.set(null);
     try {
-      await this.api.sendNotification({ creatorIds: [id], title: this.notifTitle, message: this.notifMessage, type: this.notifType });
+      await this.api.sendNotification({ creatorIds: [id], title: this.notifTitle, message: this.notifMessage, type: this.notifType, sendEmail: this.notifEmail });
       this.notifMsg.set('Sent');
       this.notifTitle = '';
       this.notifMessage = '';
+      await this.loadEmails(id);
     } catch (e) {
       this.detailError.set(errorMessage(e));
     } finally {
       this.busy.set(false);
     }
+  }
+
+  protected async loadEmails(id: string) {
+    try {
+      this.emails.set(await this.api.creatorEmails(id));
+    } catch {
+      this.emails.set([]);
+    }
+  }
+
+  protected emailPill(status: EmailLog['status']) {
+    return {
+      sent: 'bg-green-100 text-green-700',
+      failed: 'bg-red-100 text-red-700',
+      skipped: 'bg-gray-200 text-gray-600',
+      queued: 'bg-amber-100 text-amber-700',
+    }[status];
+  }
+
+  protected ago(iso: string) {
+    const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+    return `${Math.floor(s / 86400)} d ago`;
   }
 }

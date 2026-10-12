@@ -21,9 +21,15 @@ import { AdminStore } from './admin.store';
         <div class="flex gap-3">
           <a routerLink="/admin/tokens" [queryParams]="{ new: 1 }" class="btn-primary"><lucide-icon [img]="I.QrCode" [size]="18" /> Generate QR token</a>
           <a routerLink="/admin/campaigns" [queryParams]="{ new: 1 }" class="btn border border-vcc-blue text-vcc-blue hover:bg-blue-50"><lucide-icon [img]="I.Plus" [size]="18" /> New campaign</a>
+          <button type="button" class="btn border border-vcc-blue text-vcc-blue hover:bg-blue-50 disabled:opacity-60" [disabled]="testing()" (click)="sendTest()">
+            <lucide-icon [img]="testing() ? I.Loader2 : I.Mail" [size]="18" /> SEND TEST EMAIL
+          </button>
         </div>
       }
     </div>
+    @if (testResult(); as r) {
+      <p class="mt-3 text-right text-sm" role="status" [class.text-red-600]="r.error" [class.text-gray-600]="!r.error">{{ r.text }}</p>
+    }
 
     <div class="mt-7 grid grid-cols-2 gap-4 xl:grid-cols-4">
       <vcc-kpi label="Total enrolled" [value]="stats()?.totalEnrolled" [icon]="I.Users" />
@@ -73,7 +79,28 @@ export class AdminDashboardComponent implements OnInit {
   protected stats = signal<AdminStats | null>(null);
   protected loading = signal(true);
   protected error = signal<string | null>(null);
+  protected testing = signal(false);
+  protected testResult = signal<{ text: string; error: boolean } | null>(null);
   protected fmt = formatCount;
+
+  protected async sendTest() {
+    this.testing.set(true);
+    this.testResult.set(null);
+    try {
+      const { status } = await this.api.sendTestEmail();
+      this.testResult.set(
+        status === 'sent'
+          ? { text: 'Test email sent to your inbox', error: false }
+          : status === 'skipped'
+            ? { text: 'Email not configured (skipped)', error: false }
+            : { text: `Test email ${status}`, error: true },
+      );
+    } catch (e) {
+      this.testResult.set({ text: errorMessage(e), error: true });
+    } finally {
+      this.testing.set(false);
+    }
+  }
   protected coreFollowers = coreFollowers;
 
   async ngOnInit() {

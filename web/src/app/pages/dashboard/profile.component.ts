@@ -88,6 +88,24 @@ import { CreatorStore } from './creator.store';
             <div><dt class="text-vcc-gray-light">Approved</dt><dd>{{ p.approvedAt ? (p.approvedAt | date: 'd MMM y') : '—' }}</dd></div>
           </dl>
         </section>
+
+        <section class="card-dark mt-4 p-5">
+          <h3 class="heading text-sm tracking-wider text-vcc-gray-light">EMAIL UPDATES</h3>
+          <div class="mt-3 flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <p id="email-pref-label" class="font-semibold">Email me about new campaigns and updates</p>
+              <p class="text-sm text-vcc-gray-light">You'll always get emails about your application status.</p>
+            </div>
+            <button type="button" role="switch" [attr.aria-checked]="p.emailOptIn" aria-labelledby="email-pref-label"
+              (click)="toggleEmail(!p.emailOptIn)"
+              class="relative h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-vcc-blue-light"
+              [class.bg-vcc-blue]="p.emailOptIn" [class.bg-vcc-navy]="!p.emailOptIn">
+              <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform"
+                [class.translate-x-5]="p.emailOptIn"></span>
+            </button>
+          </div>
+          @if (emailError()) { <p class="mt-3 text-sm text-red-300" role="alert">{{ emailError() }}</p> }
+        </section>
       } @else {
         <div class="mb-4 flex items-center justify-between">
           <h1 class="text-3xl font-bold">Edit Profile</h1>
@@ -114,6 +132,7 @@ export class ProfileComponent {
   protected busy = signal(false);
   protected saved = signal(false);
   protected error = signal<string | null>(null);
+  protected emailError = signal<string | null>(null);
   protected formStep = signal(1);
   protected fmt = formatCount;
 
@@ -137,6 +156,19 @@ export class ProfileComponent {
       .map((r) => ({ ...r, label: PLATFORMS.find((x) => x.value === r.v)!.label, core: p.corePlatform === r.v }))
       .sort((a, b) => Number(b.core) - Number(a.core));
   });
+
+  protected async toggleEmail(value: boolean) {
+    const setValue = (v: boolean) =>
+      this.store.summary.update((s) => (s ? { ...s, profile: { ...s.profile, emailOptIn: v } } : s));
+    this.emailError.set(null);
+    setValue(value);
+    try {
+      await this.api.setEmailPreference(value);
+    } catch (e) {
+      setValue(!value);
+      this.emailError.set(errorMessage(e));
+    }
+  }
 
   protected startEdit() {
     this.saved.set(false);

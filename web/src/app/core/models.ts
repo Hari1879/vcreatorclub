@@ -58,6 +58,17 @@ export interface Profile extends ProfileForm {
   enrolledAt: string;
   approvedAt: string | null;
   adminNotes?: string | null;
+  emailOptIn: boolean;
+}
+
+export interface EmailLog {
+  id: string;
+  template: string;
+  subject: string;
+  status: 'queued' | 'sent' | 'failed' | 'skipped';
+  error: string | null;
+  createdAt: string;
+  sentAt: string | null;
 }
 
 export interface Campaign {

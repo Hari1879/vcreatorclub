@@ -89,6 +89,9 @@ const emptyDraft = (): Draft => ({
                 <button class="btn-danger-outline btn-sm ml-auto" [disabled]="busy()" (click)="deleteTarget.set(c)"><lucide-icon [img]="I.Trash2" [size]="14" /> Delete</button>
               }
             </div>
+            @if (store.canWrite() && (c.status === 'draft' || c.status === 'closed')) {
+              <p class="mt-2 text-xs text-gray-500">Eligible approved creators will be notified in the app and by email (if they opted in).</p>
+            }
           </article>
         } @empty {
           <p class="card-light col-span-full p-10 text-center text-gray-500">No campaigns yet.</p>
@@ -143,6 +146,9 @@ const emptyDraft = (): Draft => ({
               <button class="btn-primary" [disabled]="busy()" (click)="save()">Save changes</button>
             }
           </div>
+          @if (!editingId() || editingStatus() === 'draft') {
+            <p class="-mt-2 text-right text-xs text-gray-500">Eligible approved creators will be notified in the app and by email (if they opted in).</p>
+          }
         </div>
       </vcc-modal>
     }
