@@ -152,6 +152,11 @@
               <div>
                 <label class="field-label" for="ytu">Channel URL <span class="normal-case text-vcc-gray-light">(optional)</span></label>
                 <input id="ytu" class="input" type="url" formControlName="youtubeUrl" placeholder="https://youtube.com/@yourchannel" autocapitalize="off" maxlength="300" />
+                @switch (ytStatus()) {
+                  @case ('loading') { <p class="mt-1 text-xs text-vcc-gray-light">Fetching subscriber count…</p> }
+                  @case ('hidden') { <p class="mt-1 text-xs text-vcc-gray-light">This channel hides its subscriber count. Please enter it manually.</p> }
+                  @case ('failed') { <p class="mt-1 text-xs text-vcc-gray-light">Couldn't fetch the count automatically. Please enter it manually.</p> }
+                }
               </div>
             }
             @case ('facebook') {

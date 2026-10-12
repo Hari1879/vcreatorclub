@@ -2,6 +2,7 @@ import { Component, OnInit, computed, effect, inject, input, model, output, sign
 import { NgClass } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
 import { I } from '../icons';
 import { SpinnerComponent } from '../ui.components';
@@ -12,6 +13,7 @@ import {
   DISCLAIMER,
   PLATFORMS,
 } from '../../core/constants';
+import { ApiService } from '../../core/api.service';
 import { Platform, ProfileForm } from '../../core/models';
 
 export interface ProfileFormValue extends ProfileForm {
@@ -66,6 +68,9 @@ type Errors = Partial<Record<keyof ProfileFormValue | 'platforms', string>>;
 })
 export class ProfileFormComponent implements OnInit {
   private fb = inject(FormBuilder).nonNullable;
+  private api = inject(ApiService);
+  private ytRequest = 0;
+  protected ytStatus = signal<'idle' | 'loading' | 'hidden' | 'failed'>('idle');
 
   /** 'enroll' shows consents + Google sign-in button; 'edit' saves profile. */
   mode = input<'enroll' | 'edit'>('enroll');
@@ -129,6 +134,9 @@ export class ProfileFormComponent implements OnInit {
   protected bioLength = computed(() => (this.v().bio ?? '').length);
 
   constructor() {
+    this.form.controls.youtubeUrl.valueChanges
+      .pipe(debounceTime(600), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe((url) => this.fetchYoutubeCount(url));
     this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       const value = this.value();
       this.v.set(value);
@@ -151,6 +159,28 @@ export class ProfileFormComponent implements OnInit {
     const init = this.initial();
     if (init) this.patch(init);
     this.v.set(this.value());
+  }
+
+  private async fetchYoutubeCount(url: string | null) {
+    const id = ++this.ytRequest;
+    const u = (url ?? '').trim();
+    if (!/^https:\/\/(www\.|m\.)?youtube\.com\/(@|channel\/)/i.test(u)) {
+      this.ytStatus.set('idle');
+      return;
+    }
+    this.ytStatus.set('loading');
+    try {
+      const r = await this.api.followerCount('youtube', u);
+      if (id !== this.ytRequest) return;
+      if (r.count === null) {
+        this.ytStatus.set(r.hidden ? 'hidden' : 'failed');
+        return;
+      }
+      this.form.patchValue({ youtubeSubscribers: r.count });
+      this.ytStatus.set('idle');
+    } catch {
+      if (id === this.ytRequest) this.ytStatus.set('failed');
+    }
   }
 
   patch(init: Partial<ProfileFormValue>) {
