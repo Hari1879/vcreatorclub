@@ -1,6 +1,6 @@
 # VCC Creator Portal — vcreatorclub.in
 
-Vivo Creator Club portal for FTPL Tamil Nadu: QR-gated creator enrollment, creator dashboard, and admin panel.
+V Creater Club portal for FTPL Tamil Nadu: QR-gated creator enrollment, creator dashboard, and admin panel.
 
 | Layer | Tech |
 |---|---|

@@ -60,7 +60,7 @@ const SERVER_INTERVAL_MS = 30_000; // layer 2
 
           <main class="mx-auto max-w-md px-5 pb-12">
             <div class="mb-6 mt-2 text-center">
-              <vcc-logo [size]="88" class="mx-auto block w-fit" />
+              <vcc-logo [width]="260" class="mx-auto block w-fit" />
               <p class="heading mt-1 text-3xl font-bold tracking-[0.15em]">VCC</p>
               <h1 class="mt-3 text-4xl font-bold leading-none xs:text-5xl">
                 Creator <span class="text-gradient-blue">Enrollment</span>
@@ -90,7 +90,7 @@ const SERVER_INTERVAL_MS = 30_000; // layer 2
                 <lucide-icon [img]="I.Check" [size]="64" [strokeWidth]="3" />
               </span>
               <h1 class="mt-8 text-4xl font-bold">Enrollment Submitted</h1>
-              <p class="heading mt-3 text-2xl text-vcc-blue-light">Welcome to Vivo Creator Club</p>
+              <p class="heading mt-3 text-2xl text-vcc-blue-light">Welcome to V Creater Club</p>
               <p class="mx-auto mt-4 max-w-xs text-vcc-gray-light">Your application is under review. Our team will be in touch.</p>
             </div>
           </div>
@@ -98,7 +98,7 @@ const SERVER_INTERVAL_MS = 30_000; // layer 2
         @default {
           <div class="grid min-h-[100svh] place-items-center px-6 text-center">
             <div class="max-w-sm">
-              <vcc-logo [size]="72" class="mx-auto block w-fit" />
+              <vcc-logo [width]="220" class="mx-auto block w-fit" />
               <span class="mx-auto mt-8 grid h-16 w-16 place-items-center rounded-full"
                     [class]="view() === 'already' ? 'bg-vcc-blue/20 text-vcc-blue-light' : 'bg-vcc-danger/20 text-red-300'">
                 <lucide-icon [img]="view() === 'already' ? I.CheckCircle2 : I.ShieldX" [size]="32" />

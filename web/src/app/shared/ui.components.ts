@@ -5,40 +5,23 @@ import { TIER_META, TIER_PILL_LIGHT } from '../core/constants';
 import { NotificationType, ProfileStatus, Tier } from '../core/models';
 import { I } from './icons';
 
-/** VCC V-emblem (original artwork — never the Vivo logo or wordmark). */
+type VccLogoVariant = 'black' | 'blue' | 'copper';
+
 @Component({
   selector: 'vcc-logo',
   standalone: true,
   template: `
-    <span class="inline-flex items-center gap-3">
-      <svg [attr.width]="size()" [attr.height]="size() * 0.8" viewBox="0 0 120 96" aria-hidden="true"
-           class="drop-shadow-[0_0_12px_rgba(30,136,229,0.55)]">
-        <defs>
-          <linearGradient [attr.id]="'vl' + uid" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#1565C0" /><stop offset="1" stop-color="#1E88E5" />
-          </linearGradient>
-          <linearGradient [attr.id]="'vr' + uid" x1="1" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#90CAF9" /><stop offset="1" stop-color="#42A5F5" />
-          </linearGradient>
-        </defs>
-        <path d="M4 6h30l30 70-15 14z" [attr.fill]="'url(#vl' + uid + ')'" />
-        <path d="M86 6h30L66 90l-15-14z" [attr.fill]="'url(#vr' + uid + ')'" />
-      </svg>
-      @if (withText()) {
-        <span class="flex flex-col leading-none" [class.text-white]="!dark()" [class.text-vcc-navy]="dark()">
-          <span class="heading font-bold" [style.font-size.px]="size() * 0.42">VCC</span>
-          <span class="heading mt-0.5 tracking-[0.25em] opacity-80" [style.font-size.px]="Math.max(9, size() * 0.15)">Creator Club</span>
-        </span>
-      }
-    </span>
+    <img
+      [src]="'/brand/logo-' + variant() + '.png'"
+      [style.width.px]="width()"
+      class="block h-auto max-w-full object-contain"
+      alt="V Creator Club — Powered by Fangs Technology Pvt. Ltd."
+    />
   `,
 })
 export class VccLogoComponent {
-  size = input(48);
-  withText = input(false);
-  dark = input(false);
-  protected readonly Math = Math;
-  protected readonly uid = Math.random().toString(36).slice(2, 8);
+  width = input(180);
+  variant = input<VccLogoVariant>('copper');
 }
 
 @Component({

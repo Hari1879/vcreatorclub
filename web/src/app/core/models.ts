@@ -126,6 +126,7 @@ export interface CampaignDetail extends Campaign {
     id: string;
     creatorId: string;
     fullName: string;
+    phone: string;
     instagramHandle: string | null;
     city: string | null;
     tier: Tier;

@@ -14,7 +14,7 @@ import { DISCLAIMER } from '../../core/constants';
     <header class="fixed inset-x-0 top-0 z-30 transition-colors"
             [class.bg-vcc-navy-deep]="scrolled()" [class.shadow-lg]="scrolled()">
       <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-        <vcc-logo [size]="40" [withText]="true" />
+        <vcc-logo [width]="180" />
         <a href="#join" class="btn-primary px-5 text-sm">Join VCC</a>
       </div>
     </header>
@@ -28,10 +28,10 @@ import { DISCLAIMER } from '../../core/constants';
         <div class="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(#42A5F5_1px,transparent_1px),linear-gradient(90deg,#42A5F5_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]"></div>
       </div>
       <div class="relative mx-auto max-w-4xl">
-        <vcc-logo [size]="132" class="mx-auto block w-fit" />
+        <vcc-logo [width]="360" class="mx-auto block w-fit" />
         <p class="heading mt-4 text-3xl font-bold tracking-[0.2em] text-white">VCC</p>
         <h1 class="text-gradient-blue mt-2 text-5xl font-bold leading-none xs:text-6xl sm:text-7xl md:text-8xl">
-          Vivo Creator Club
+          V Creater Club
         </h1>
         <p class="mt-5 text-lg text-white sm:text-xl">Tamil Nadu's Creator Ecosystem · By Invitation Only</p>
         <a href="#join" class="btn-primary mt-9 px-10 py-4 text-lg shadow-lg shadow-vcc-blue/40">
@@ -112,7 +112,7 @@ import { DISCLAIMER } from '../../core/constants';
 
     <!-- Footer: VCC logo + FTPL text only. No social links, no Vivo logo. -->
     <footer class="bg-vcc-navy-deep px-4 py-10 text-center">
-      <vcc-logo [size]="40" [withText]="true" class="mx-auto block w-fit" />
+      <vcc-logo [width]="180" class="mx-auto block w-fit" />
       <p class="mt-5 text-sm text-white">A Creator Initiative by FTPL · Tamil Nadu</p>
       <p class="mt-1 text-xs text-vcc-gray-light">
         Powered by Fangs Technology Pvt Ltd — Authorised Vivo India Super Stockist, Tamil Nadu

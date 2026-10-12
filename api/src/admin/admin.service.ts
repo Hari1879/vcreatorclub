@@ -120,7 +120,7 @@ export class AdminService {
           c,
           r.id,
           'Application approved',
-          'Your VCC application has been approved! Welcome to Vivo Creator Club.',
+          'Your VCC application has been approved! Welcome to V Creater Club.',
           'approval',
         );
       }
@@ -260,7 +260,7 @@ export class AdminService {
     const row = await this.db.one('select * from campaigns where id = $1', [id]);
     if (!row) throw new NotFoundException();
     const assignments = await this.db.query(
-      `select a.*, p.full_name, p.instagram_handle, p.city, p.tier
+      `select a.*, p.full_name, p.phone, p.instagram_handle, p.city, p.tier
          from campaign_assignments a join creator_profiles p on p.id = a.creator_id
         where a.campaign_id = $1 order by a.created_at desc`,
       [id],
@@ -271,6 +271,7 @@ export class AdminService {
         id: a.id,
         creatorId: a.creator_id,
         fullName: a.full_name,
+        phone: a.phone,
         instagramHandle: a.instagram_handle,
         city: a.city,
         tier: a.tier,

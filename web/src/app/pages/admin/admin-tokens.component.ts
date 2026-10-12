@@ -239,11 +239,19 @@ export class AdminTokensComponent implements OnInit {
     }
   }
 
-  /** Print-ready PNG: VCC mark, QR, label, URL and FTPL credit. */
+  /** Print-ready PNG with the V Creator Club logo, QR, label, URL and FTPL credit. */
   protected async download(t: EnrollmentToken) {
     const qr = this.qrBox()?.nativeElement.querySelector('canvas');
     if (!qr) return;
     await document.fonts?.ready;
+    const logo = new Image();
+    logo.src = '/brand/logo-copper.png';
+    try {
+      await logo.decode();
+    } catch {
+      this.error.set('Could not load the V Creator Club logo for the QR poster.');
+      return;
+    }
     const W = 1200;
     const H = 1640;
     const c = document.createElement('canvas');
@@ -253,28 +261,17 @@ export class AdminTokensComponent implements OnInit {
     g.fillStyle = '#0D1B3E';
     g.fillRect(0, 0, W, H);
 
-    // VCC V-emblem
-    g.save();
-    g.translate(W / 2 - 90, 70);
-    g.scale(1.5, 1.5);
-    g.fillStyle = '#1E88E5';
-    g.fill(new Path2D('M4 6h30l30 70-15 14z'));
-    g.fillStyle = '#64B5F6';
-    g.fill(new Path2D('M86 6h30L66 90l-15-14z'));
-    g.restore();
+    g.drawImage(logo, 250, 70, 700, 122);
 
     g.textAlign = 'center';
-    g.fillStyle = '#FFFFFF';
-    g.font = '700 84px "Barlow Condensed", Arial, sans-serif';
-    g.fillText('VIVO CREATOR CLUB', W / 2, 320);
     g.fillStyle = '#90CAF9';
     g.font = '600 46px "Barlow Condensed", Arial, sans-serif';
-    g.fillText('SCAN TO ENROL', W / 2, 390);
+    g.fillText('SCAN TO ENROL', W / 2, 300);
 
     // QR on white tile
     const size = 820;
     const x = (W - size) / 2;
-    const y = 440;
+    const y = 350;
     g.fillStyle = '#FFFFFF';
     g.beginPath();
     g.roundRect(x - 30, y - 30, size + 60, size + 60, 36);

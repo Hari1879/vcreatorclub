@@ -68,13 +68,13 @@ import { coreFollowers } from './admin-dashboard.component';
               <th class="w-12 px-4 py-3">
                 <input type="checkbox" class="h-4 w-4 accent-vcc-blue" [checked]="allSelected()" (change)="toggleAll()" aria-label="Select all" />
               </th>
-              <th class="px-3 py-3">Name</th><th class="px-3 py-3">Instagram</th><th class="px-3 py-3">Followers</th>
+              <th class="px-3 py-3">Name</th><th class="px-3 py-3">Phone</th><th class="px-3 py-3">Instagram</th><th class="px-3 py-3">Followers</th>
               <th class="px-3 py-3">City</th><th class="px-3 py-3">Status</th><th class="px-3 py-3">Tier</th><th class="px-3 py-3">Action</th>
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
-              <tr><td colspan="8" class="py-14 text-center text-vcc-blue"><vcc-spinner [size]="28" /></td></tr>
+              <tr><td colspan="9" class="py-14 text-center text-vcc-blue"><vcc-spinner [size]="28" /></td></tr>
             } @else {
               @for (p of page()?.items; track p.id) {
                 <tr class="border-t border-gray-100 hover:bg-slate-50/70">
@@ -87,6 +87,7 @@ import { coreFollowers } from './admin-dashboard.component';
                       <span><span class="block font-bold text-gray-900 hover:text-vcc-blue">{{ p.fullName }}</span><span class="text-xs text-gray-500">{{ p.contentCategory }}</span></span>
                     </button>
                   </td>
+                  <td class="px-3 py-3 whitespace-nowrap">+91 {{ p.phone }}</td>
                   <td class="px-3 py-3">{{ p.instagramHandle || '—' }}</td>
                   <td class="px-3 py-3">{{ fmt(coreFollowers(p)) }} <span class="text-xs capitalize text-gray-400">{{ p.corePlatform }}</span></td>
                   <td class="px-3 py-3">{{ p.city }}</td>
@@ -96,7 +97,7 @@ import { coreFollowers } from './admin-dashboard.component';
                     @if (store.canWrite()) {
                       <div class="flex gap-2">
                         <button class="btn-primary btn-sm" [disabled]="p.status === 'approved' || busy()" (click)="approve([p.id])">Approve</button>
-                        <button class="btn-danger-outline btn-sm" [disabled]="p.status === 'rejected' || busy()" (click)="rejectTarget.set(p); rejectNote = ''">Reject</button>
+                        <button class="btn-danger-outline btn-sm" [disabled]="p.status === 'approved' || p.status === 'rejected' || busy()" (click)="rejectTarget.set(p); rejectNote = ''">Reject</button>
                       </div>
                     } @else {
                       <button class="btn-ghost btn-sm" (click)="openDetail(p.id)">View</button>
@@ -104,7 +105,7 @@ import { coreFollowers } from './admin-dashboard.component';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="py-14 text-center text-gray-500">No creators match these filters.</td></tr>
+                <tr><td colspan="9" class="py-14 text-center text-gray-500">No creators match these filters.</td></tr>
               }
             }
           </tbody>

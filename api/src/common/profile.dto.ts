@@ -140,7 +140,7 @@ export class SubmitEnrollmentDto extends ProfileDto {
   @IsOptional() @IsString() @MaxLength(64)
   draftId?: string;
 
-  @Equals(true, { message: 'Please agree to enrol in the Vivo Creator Club program' })
+  @Equals(true, { message: 'Please agree to enrol in the V Creater Club program' })
   consentEnroll!: boolean;
 
   @Equals(true, { message: 'Please accept the confidentiality terms' })

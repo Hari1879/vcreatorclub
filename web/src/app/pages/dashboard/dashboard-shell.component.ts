@@ -25,7 +25,7 @@ import { CreatorStore } from './creator.store';
       } @else if (store.profile()?.status !== 'approved') {
         <!-- Pending / rejected / inactive: no dashboard content -->
         <div class="flex min-h-[100svh] flex-col items-center justify-center px-6 text-center">
-          <vcc-logo [size]="80" />
+          <vcc-logo [width]="240" />
           @switch (store.profile()?.status) {
             @case ('pending') {
               <span class="mt-10 grid h-16 w-16 place-items-center rounded-full bg-vcc-warning/20 text-vcc-warning">
@@ -55,7 +55,7 @@ import { CreatorStore } from './creator.store';
         <div class="lg:flex">
           <!-- Laptop sidebar -->
           <aside class="sticky top-0 hidden h-[100svh] w-60 shrink-0 flex-col border-r border-vcc-blue/15 bg-vcc-navy px-4 py-6 lg:flex">
-            <vcc-logo [size]="48" [withText]="true" class="px-2" />
+            <vcc-logo [width]="180" class="px-2" />
             <nav class="mt-10 flex flex-col gap-1">
               @for (n of nav; track n.path) {
                 <a [routerLink]="n.path" routerLinkActive="!bg-vcc-blue !text-white" [routerLinkActiveOptions]="{ exact: n.exact }"
@@ -76,7 +76,7 @@ import { CreatorStore } from './creator.store';
           <div class="min-w-0 flex-1">
             <!-- Phone header -->
             <header class="flex items-center justify-between px-5 pb-2 pt-5 lg:hidden">
-              <vcc-logo [size]="52" [withText]="true" />
+              <vcc-logo [width]="180" />
               <a routerLink="/dashboard/notifications" class="relative p-2" aria-label="Notifications">
                 <lucide-icon [img]="I.Bell" [size]="26" />
                 @if (store.unread()) { <span class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-vcc-danger"></span> }

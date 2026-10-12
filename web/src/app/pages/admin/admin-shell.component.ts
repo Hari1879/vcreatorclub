@@ -27,7 +27,7 @@ const ROLE_LABEL: Record<AdminRole, string> = { super_admin: 'Super Admin', admi
         <div class="min-h-screen bg-slate-50">
           <!-- Sidebar (fixed, 220px) -->
           <aside class="fixed inset-y-0 left-0 z-30 flex w-[220px] flex-col bg-vcc-navy px-3 py-6 text-white">
-            <vcc-logo [size]="46" [withText]="true" class="px-2" />
+            <vcc-logo [width]="180" class="px-2" />
             <div class="mx-2 mt-8 rounded-lg bg-white/5 px-3 py-2.5">
               <p class="truncate font-semibold">{{ store.admin()?.name }}</p>
               <p class="text-xs text-vcc-gray-light">{{ roleLabel() }}</p>
@@ -66,7 +66,7 @@ const ROLE_LABEL: Record<AdminRole, string> = { super_admin: 'Super Admin', admi
       @default {
         <div class="grid min-h-screen place-items-center bg-hero px-6 text-center text-white">
           <div class="max-w-sm">
-            <vcc-logo [size]="88" class="mx-auto block w-fit" />
+            <vcc-logo [width]="260" class="mx-auto block w-fit" />
             <h1 class="mt-6 text-4xl font-bold">VCC Admin</h1>
             @if (state() === 'signed-out') {
               <p class="mt-3 text-vcc-gray-light">Sign in with your authorised Google account.</p>

@@ -169,7 +169,7 @@ const emptyDraft = (): Draft => ({
             <tbody>
               @for (a of detail()!.assignments; track a.id) {
                 <tr class="border-t border-gray-100">
-                  <td class="py-2.5"><span class="font-semibold">{{ a.fullName }}</span><span class="block text-xs text-gray-500">{{ a.instagramHandle }}</span></td>
+                  <td class="py-2.5"><span class="font-semibold">{{ a.fullName }}</span><span class="block text-xs text-gray-500">{{ a.instagramHandle }}</span><span class="block text-xs text-gray-500">+91 {{ a.phone }}</span></td>
                   <td>{{ a.city }}</td>
                   <td><vcc-tier-badge [tier]="a.tier" [light]="true" /></td>
                   <td class="text-gray-500">{{ a.createdAt | date: 'd MMM' }}</td>
