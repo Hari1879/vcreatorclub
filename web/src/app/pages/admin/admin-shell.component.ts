@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { LucideAngularModule } from 'lucide-angular';
@@ -33,7 +33,7 @@ const ROLE_LABEL: Record<AdminRole, string> = { super_admin: 'Super Admin', admi
               <p class="text-xs text-vcc-gray-light">{{ roleLabel() }}</p>
             </div>
             <nav class="mt-6 flex flex-col gap-1">
-              @for (n of nav; track n.path) {
+              @for (n of visibleNav(); track n.path) {
                 <a [routerLink]="n.path" routerLinkActive="!bg-vcc-blue !text-white shadow-lg shadow-vcc-blue/30" [routerLinkActiveOptions]="{ exact: n.exact }"
                    class="flex items-center gap-3 rounded-lg px-4 py-3 text-[15px] text-vcc-gray-light transition hover:bg-white/5 hover:text-white">
                   <lucide-icon [img]="n.icon" [size]="20" /> {{ n.label }}
@@ -100,8 +100,12 @@ export class AdminShellComponent implements OnInit {
     { path: '/admin/creators', label: 'Creators', icon: I.Users, exact: false },
     { path: '/admin/campaigns', label: 'Campaigns', icon: I.Megaphone, exact: false },
     { path: '/admin/tokens', label: 'QR Tokens', icon: I.QrCode, exact: false },
+    { path: '/admin/users', label: 'Users', icon: I.UserCog, exact: false, superOnly: true },
   ];
 
+  protected visibleNav = computed(() =>
+    this.nav.filter((n) => !n.superOnly || this.store.isSuperAdmin()),
+  );
   protected roleLabel = () => ROLE_LABEL[(this.store.admin()?.role ?? 'admin') as AdminRole];
   protected initial = () => (this.store.admin()?.name ?? '?').charAt(0).toUpperCase();
 

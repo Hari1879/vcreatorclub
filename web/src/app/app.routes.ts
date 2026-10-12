@@ -65,6 +65,11 @@ export const routes: Routes = [
           import('./pages/admin/admin-campaigns.component').then((m) => m.AdminCampaignsComponent),
       },
       {
+        path: 'users',
+        title: 'VCC Admin — Users',
+        loadComponent: () => import('./pages/admin/admin-users.component').then((m) => m.AdminUsersComponent),
+      },
+      {
         path: 'tokens',
         title: 'VCC Admin — QR Tokens',
         loadComponent: () => import('./pages/admin/admin-tokens.component').then((m) => m.AdminTokensComponent),

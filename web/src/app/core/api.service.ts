@@ -2,7 +2,10 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
+  AdminRole,
   AdminStats,
+  AdminUser,
+  AssignableRole,
   AppNotification,
   Campaign,
   CampaignDetail,
@@ -81,6 +84,10 @@ export class ApiService {
   updateCreator = (id: string, body: { tier?: string; status?: string; adminNotes?: string | null }) =>
     this.patch<Profile>(`/admin/creators/${id}`, body);
   creatorEmails = (id: string) => this.get<EmailLog[]>(`/admin/creators/${id}/emails`);
+  adminUsers = (q: { search?: string; page?: number; pageSize?: number }) =>
+    this.get<Paged<AdminUser>>('/admin/users', q);
+  setUserRole = (userId: string, role: AssignableRole) =>
+    this.put<{ id: string; role: AdminRole | null }>(`/admin/users/${userId}/role`, { role });
   sendTestEmail = () => this.post<{ status: string }>('/admin/email/test');
   campaigns = () => this.get<Campaign[]>('/admin/campaigns');
   campaign = (id: string) => this.get<CampaignDetail>(`/admin/campaigns/${id}`);

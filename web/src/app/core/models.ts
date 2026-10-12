@@ -126,6 +126,20 @@ export interface AdminStats {
   recent: Profile[];
 }
 
+export type AssignableRole = AdminRole | 'none';
+
+export interface AdminUser {
+  id: string;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+  createdAt: string;
+  lastLoginAt: string | null;
+  role: AdminRole | null;
+  isCreator: boolean;
+  isYou: boolean;
+}
+
 export interface Paged<T> {
   items: T[];
   total: number;
