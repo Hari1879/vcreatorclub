@@ -10,11 +10,13 @@ import {
   Put,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { AdminGuard, AdminWrite } from '../auth/admin.guard';
 import { AdminService } from './admin.service';
+import { CsvExportService } from './csv-export.service';
 import {
   ApproveDto,
   AssignmentUpdateDto,
@@ -31,7 +33,10 @@ import {
 @Controller('admin')
 @UseGuards(AdminGuard)
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly csv: CsvExportService,
+  ) {}
 
   @Get('me')
   me(@Req() req: Request) {
@@ -47,6 +52,21 @@ export class AdminController {
   @Get('creators')
   creators(@Query() q: ListCreatorsQuery) {
     return this.admin.listCreators(q);
+  }
+
+  // Must stay above creators/:id, otherwise "export" is captured as an id.
+  @Get('creators/export')
+  async exportCreators(@Query() q: ListCreatorsQuery, @Res() res: Response) {
+    const body = await this.csv.creatorsCsv(q);
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+    res
+      .status(200)
+      .set({
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="vcc-creators-${date}.csv"`,
+        'Cache-Control': 'no-store',
+      })
+      .send(body);
   }
 
   @Get('creators/:id')

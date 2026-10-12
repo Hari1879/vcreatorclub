@@ -29,11 +29,21 @@ import { coreFollowers } from './admin-dashboard.component';
   template: `
     <div class="flex items-center justify-between">
       <h1 class="text-5xl font-bold text-vcc-navy">Creator Roster</h1>
-      @if (store.canWrite()) {
-        <button class="btn-primary px-6 py-3 text-lg" [disabled]="!selected().size || busy()" (click)="approveSelected()">
-          <lucide-icon [img]="I.Check" [size]="20" /> Approve selected @if (selected().size) { ({{ selected().size }}) }
+      <div class="flex items-center gap-3">
+        <button
+          class="btn border border-vcc-blue text-vcc-blue hover:bg-blue-50 px-6 py-3 text-lg"
+          title="Exports all creators matching the current filters"
+          [disabled]="loading()"
+          (click)="exportCsv()"
+        >
+          <lucide-icon [img]="I.Download" [size]="20" /> Export CSV
         </button>
-      }
+        @if (store.canWrite()) {
+          <button class="btn-primary px-6 py-3 text-lg" [disabled]="!selected().size || busy()" (click)="approveSelected()">
+            <lucide-icon [img]="I.Check" [size]="20" /> Approve selected @if (selected().size) { ({{ selected().size }}) }
+          </button>
+        }
+      </div>
     </div>
 
     <div class="mt-7 grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -291,6 +301,20 @@ export class AdminCreatorsComponent implements OnInit {
   protected notifMessage = '';
   protected notifType = 'info';
   protected notifMsg = signal('');
+
+  protected exportCsv() {
+    const params = new URLSearchParams();
+    if (this.search.trim()) params.set('search', this.search.trim());
+    if (this.status) params.set('status', this.status);
+    if (this.tier) params.set('tier', this.tier);
+    const qs = params.toString();
+    const a = document.createElement('a');
+    a.href = `/api/admin/creators/export${qs ? `?${qs}` : ''}`;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
 
   private searchTimer?: ReturnType<typeof setTimeout>;
 
