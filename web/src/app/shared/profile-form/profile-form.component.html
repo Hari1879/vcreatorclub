@@ -227,7 +227,7 @@
 
   <!-- ======================= STEP 3 — CONTENT PROFILE ======================= -->
   @if (step() === 3) {
-    <h2 class="text-xl font-bold text-vcc-blue-light">Content profile</h2>
+    <h2 class="text-xl font-bold text-vcc-blue-light">About your content and collaborations</h2>
 
     <fieldset>
       <legend class="field-label">Content types</legend>
@@ -243,9 +243,9 @@
     </fieldset>
 
     <div>
-      <label class="field-label" for="bio">About you</label>
+      <label class="field-label" for="bio">Introduce yourself</label>
       <textarea id="bio" class="input min-h-28" formControlName="bio" maxlength="300" rows="4"
-                placeholder="Tell us about your content and why you'd like to join VCC"></textarea>
+                placeholder="Tell us about the content you create and why you'd like to join VCC"></textarea>
       <p class="field-hint text-right">{{ bioLength() }}/300</p>
       @if (err('bio'); as e) { <p class="field-error" data-error>{{ e }}</p> }
     </div>
