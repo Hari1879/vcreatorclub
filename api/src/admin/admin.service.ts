@@ -134,6 +134,19 @@ export class AdminService {
     return { approved: out.approved };
   }
 
+  /** Permanently removes the creator's account and all their data (cascades). */
+  async deleteCreator(id: string) {
+    const res = await this.db.query(
+      `delete from users u using creator_profiles p
+        where u.id = p.id and u.id = $1
+          and not exists (select 1 from admin_users a where a.id = u.id)
+        returning u.id`,
+      [id],
+    );
+    if (!res.length) throw new NotFoundException('Creator not found.');
+    return { ok: true };
+  }
+
   async reject(id: string, note?: string) {
     const out = await this.db.tx(async (c) => {
       const res = await c.query(

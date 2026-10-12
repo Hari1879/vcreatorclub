@@ -77,6 +77,7 @@ export class ApiService {
   creator = (id: string) => this.get<CreatorDetail>(`/admin/creators/${id}`);
   approve = (ids: string[]) => this.post<{ approved: number }>('/admin/creators/approve', { ids });
   reject = (id: string, note?: string) => this.post(`/admin/creators/${id}/reject`, { note: note || undefined });
+  deleteCreator = (id: string) => this.del<{ ok: boolean }>(`/admin/creators/${id}`);
   updateCreator = (id: string, body: { tier?: string; status?: string; adminNotes?: string | null }) =>
     this.patch<Profile>(`/admin/creators/${id}`, body);
   creatorEmails = (id: string) => this.get<EmailLog[]>(`/admin/creators/${id}/emails`);

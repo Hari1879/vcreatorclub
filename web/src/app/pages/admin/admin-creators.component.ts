@@ -108,6 +108,7 @@ import { coreFollowers } from './admin-dashboard.component';
                       <div class="flex gap-2">
                         <button class="btn-primary btn-sm" [disabled]="p.status === 'approved' || busy()" (click)="approve([p.id])">Approve</button>
                         <button class="btn-danger-outline btn-sm" [disabled]="p.status === 'approved' || p.status === 'rejected' || busy()" (click)="rejectTarget.set(p); rejectNote = ''">Reject</button>
+                        <button class="btn-danger-outline btn-sm" [disabled]="busy()" (click)="deleteTarget.set(p)">Delete</button>
                       </div>
                     } @else {
                       <button class="btn-ghost btn-sm" (click)="openDetail(p.id)">View</button>
@@ -137,6 +138,17 @@ import { coreFollowers } from './admin-dashboard.component';
         </div>
       </div>
     </section>
+
+    <!-- Delete modal -->
+    @if (deleteTarget(); as t) {
+      <vcc-modal title="Delete creator" (closed)="deleteTarget.set(null)">
+        <p class="text-gray-700">Permanently delete <strong>{{ t.fullName }}</strong>? Their profile, campaign history and notifications will be removed. This can't be undone.</p>
+        <div class="mt-5 flex justify-end gap-3">
+          <button class="btn-ghost" (click)="deleteTarget.set(null)">Cancel</button>
+          <button class="btn bg-vcc-danger text-white hover:bg-red-700" [disabled]="busy()" (click)="remove()">Delete</button>
+        </div>
+      </vcc-modal>
+    }
 
     <!-- Reject modal -->
     @if (rejectTarget(); as r) {
@@ -242,6 +254,7 @@ import { coreFollowers } from './admin-dashboard.component';
                 <p class="mt-1 text-xs text-gray-500">To approve with a notification, use the Approve button in the roster.</p>
                 <div class="mt-3 flex items-center justify-end gap-3">
                   @if (detailMsg()) { <span class="text-sm text-vcc-success">{{ detailMsg() }}</span> }
+                  <button class="btn-danger-outline" [disabled]="busy()" (click)="deleteTarget.set(d)">Delete creator</button>
                   <button class="btn-primary" [disabled]="busy()" (click)="saveDetail()">Save</button>
                 </div>
               </div>
@@ -307,6 +320,7 @@ export class AdminCreatorsComponent implements OnInit {
   protected actionError = signal<string | null>(null);
   protected selected = signal<Set<string>>(new Set());
 
+  protected deleteTarget = signal<Profile | null>(null);
   protected rejectTarget = signal<Profile | null>(null);
   protected rejectNote = '';
 
@@ -442,6 +456,23 @@ export class AdminCreatorsComponent implements OnInit {
     } catch (e) {
       this.actionError.set(errorMessage(e));
       this.rejectTarget.set(null);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async remove() {
+    const t = this.deleteTarget();
+    if (!t) return;
+    this.busy.set(true);
+    try {
+      await this.api.deleteCreator(t.id);
+      this.deleteTarget.set(null);
+      this.detailOpen.set(false);
+      await this.reload();
+    } catch (e) {
+      this.actionError.set(errorMessage(e));
+      this.deleteTarget.set(null);
     } finally {
       this.busy.set(false);
     }

@@ -88,6 +88,12 @@ export class AdminController {
     return this.admin.approve(req.admin!.id, dto.ids);
   }
 
+  @Delete('creators/:id')
+  @AdminWrite()
+  deleteCreator(@Param('id', ParseUUIDPipe) id: string) {
+    return this.admin.deleteCreator(id);
+  }
+
   @Post('creators/:id/reject')
   @AdminWrite()
   reject(@Param('id', ParseUUIDPipe) id: string, @Body() dto: RejectDto) {
