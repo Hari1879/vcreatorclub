@@ -15,15 +15,20 @@ import { CampaignCardComponent } from './campaign-card.component';
   template: `
     @if (store.summary(); as s) {
       <!-- Greeting -->
-      <section class="relative flex items-center gap-5 overflow-hidden py-4">
-        <span class="grid h-24 w-24 shrink-0 place-items-center rounded-full border-2 border-vcc-blue-light bg-vcc-navy-light text-4xl font-bold shadow-[0_0_24px_rgba(66,165,245,0.45)] xs:h-28 xs:w-28">
-          <span class="heading">{{ initials() }}</span>
+      <section class="relative flex items-center gap-3 overflow-hidden py-4 xs:gap-5">
+        <span class="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-vcc-blue-light bg-vcc-navy-light text-3xl font-bold shadow-[0_0_24px_rgba(66,165,245,0.45)] xs:h-24 xs:w-24">
+          @if (s.profile.profilePhotoUrl) {
+            <img [src]="s.profile.profilePhotoUrl" [alt]="s.profile.fullName" class="h-full w-full object-cover" />
+          } @else {
+            <span class="heading">{{ initials() }}</span>
+          }
         </span>
-        <div class="min-w-0">
-          <h1 class="break-words text-4xl font-bold leading-none">Hi, {{ firstName() }}</h1>
+        <div class="min-w-0 flex-1">
+          <h1 class="break-words text-2xl font-bold leading-tight xs:text-3xl">Hi, {{ firstName() }} <span aria-hidden="true">👋</span></h1>
           <div class="mt-2"><vcc-tier-badge [tier]="s.profile.tier" /></div>
-          <p class="heading mt-3 text-[11px] tracking-[0.25em] text-vcc-gray-light">Create · Collaborate · Grow</p>
+          <p class="heading mt-2 text-[10px] tracking-[0.2em] text-vcc-gray-light">Create · Collaborate · Grow</p>
         </div>
+        <img src="/vcc-logo.svg" alt="" aria-hidden="true" class="h-16 w-14 shrink-0 drop-shadow-[0_0_12px_rgba(30,136,229,0.5)] xs:h-20 xs:w-16" />
       </section>
 
       <!-- Status -->
@@ -43,7 +48,7 @@ import { CampaignCardComponent } from './campaign-card.component';
           <a routerLink="/dashboard/notifications" class="flex items-center gap-1 text-sm text-vcc-blue-light">View All <lucide-icon [img]="I.ChevronRight" [size]="16" /></a>
         </div>
         @for (n of s.notifications; track n.id) {
-          <a routerLink="/dashboard/notifications" class="card-dark mb-3 flex items-start gap-4 p-4">
+          <a routerLink="/dashboard/notifications" class="card-dark mb-3 flex items-start gap-3 p-3 xs:gap-4 xs:p-4">
             <vcc-notif-icon [type]="n.type" />
             <span class="min-w-0 flex-1">
               <span class="flex items-start justify-between gap-3">
@@ -52,6 +57,7 @@ import { CampaignCardComponent } from './campaign-card.component';
               </span>
               <span class="mt-0.5 line-clamp-2 block text-sm text-vcc-gray-light">{{ n.message }}</span>
             </span>
+            <lucide-icon [img]="I.ChevronRight" [size]="18" class="mt-1 shrink-0 text-vcc-gray-light" />
           </a>
         } @empty {
           <p class="card-dark p-5 text-center text-sm text-vcc-gray-light">No notifications yet.</p>

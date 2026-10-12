@@ -20,31 +20,38 @@ const TYPE_CLS: Record<string, string> = {
   template: `
     @let c = campaign();
     <article class="card-dark overflow-hidden">
-      @if (c.bannerUrl) { <img [src]="c.bannerUrl" alt="" class="h-32 w-full object-cover" /> }
-      <div class="flex gap-4 p-4">
-        <span class="hidden h-20 w-20 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-vcc-blue-dark to-vcc-navy text-vcc-blue-light xs:grid">
-          <lucide-icon [img]="I.Megaphone" [size]="34" />
-        </span>
-        <div class="min-w-0 flex-1">
-          @if (c.product) { <p class="text-xs uppercase tracking-wider text-vcc-gray-light">{{ c.product }}</p> }
-          <h3 class="text-xl font-bold leading-tight">{{ c.title }}</h3>
-          <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span class="pill border capitalize" [ngClass]="typeCls()">{{ c.campaignType }}</span>
-            @if (c.deadline) {
-              <span class="pill border border-vcc-gray-light/30 text-vcc-gray-light">
-                <lucide-icon [img]="I.CalendarDays" [size]="13" /> Deadline {{ c.deadline | date: 'MMM d' }}
-              </span>
-            }
-            <span class="pill border border-vcc-gray-light/30 text-vcc-gray-light">{{ c.deliverables.length }} deliverable{{ c.deliverables.length === 1 ? '' : 's' }}</span>
+      <div class="flex" [class.min-h-44]="compact() && !!c.bannerUrl" [class.flex-col]="!compact() || !c.bannerUrl">
+        @if (c.bannerUrl) {
+          <img [src]="c.bannerUrl" alt="" [ngClass]="compact() ? 'h-44 w-2/5 shrink-0 object-cover' : 'h-32 w-full object-cover'" />
+        }
+        <div class="flex gap-4 p-4" [class.flex-1]="compact() && !!c.bannerUrl" [class.flex-col]="compact()" [class.p-3]="compact() && !!c.bannerUrl">
+          @if (!compact() || !c.bannerUrl) {
+            <span class="hidden h-20 w-20 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-vcc-blue-dark to-vcc-navy text-vcc-blue-light xs:grid">
+              <lucide-icon [img]="I.Megaphone" [size]="34" />
+            </span>
+          }
+          <div class="min-w-0 flex-1">
+            @if (c.product) { <p class="text-xs uppercase tracking-wider text-vcc-gray-light">{{ c.product }}</p> }
+            <h3 class="text-xl font-bold leading-tight" [class.text-lg]="compact()">{{ c.title }}</h3>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <span class="pill border capitalize" [ngClass]="typeCls()">{{ c.campaignType }}</span>
+              @if (c.deadline) {
+                <span class="pill border border-vcc-gray-light/30 text-vcc-gray-light">
+                  <lucide-icon [img]="I.CalendarDays" [size]="13" /> Deadline {{ c.deadline | date: 'MMM d' }}
+                </span>
+              }
+              @if (!compact()) {
+                <span class="pill border border-vcc-gray-light/30 text-vcc-gray-light">{{ c.deliverables.length }} deliverable{{ c.deliverables.length === 1 ? '' : 's' }}</span>
+              }
+            </div>
           </div>
+          @if (compact()) {
+            <a routerLink="/dashboard/campaigns" class="btn-primary mt-auto self-start px-6">View <lucide-icon [img]="I.ArrowRight" [size]="18" /></a>
+          }
         </div>
       </div>
 
-      @if (compact()) {
-        <div class="px-4 pb-4">
-          <a routerLink="/dashboard/campaigns" class="btn-primary px-6">View <lucide-icon [img]="I.ArrowRight" [size]="18" /></a>
-        </div>
-      } @else {
+      @if (!compact()) {
         @if (!open()) {
           <div class="px-4 pb-4">
             <button class="btn-primary px-6" (click)="open.set(true)">View <lucide-icon [img]="I.ArrowRight" [size]="18" /></button>
