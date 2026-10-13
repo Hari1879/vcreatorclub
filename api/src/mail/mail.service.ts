@@ -50,6 +50,7 @@ export class MailService {
   private readonly from: string;
   private readonly spacingMs: number;
   private readonly adminAlertEmails: string[];
+  private readonly coCreateNotifyEmail: string;
   // Single in-process queue: one provider call at a time, spaced out.
   private tail: Promise<unknown> = Promise.resolve();
 
@@ -62,6 +63,9 @@ export class MailService {
       (config.get<string>('MAIL_FROM') ?? '').trim() ||
       'VCC Creator Club <noreply@vcreatorclub.in>';
     this.spacingMs = Number(config.get<string>('MAIL_SPACING_MS') ?? 600);
+    this.coCreateNotifyEmail = (
+      config.get<string>('CO_CREATE_NOTIFY_EMAIL') ?? ''
+    ).trim();
     this.adminAlertEmails = (config.get<string>('ADMIN_ALERT_EMAILS') ?? '')
       .split(',')
       .map((e) => e.trim())
@@ -319,6 +323,23 @@ export class MailService {
           ...c,
         })),
       );
+    });
+  }
+
+  /** Skips silently when CO_CREATE_NOTIFY_EMAIL is unset. Never includes bank details. */
+  notifyCoCreateSubmitted(
+    creatorName: string,
+    title: string,
+    supportType: string,
+  ) {
+    return this.safely('notifyCoCreateSubmitted', async () => {
+      if (!this.coCreateNotifyEmail) return;
+      const c = tpl.coCreateSubmitted(creatorName, title, supportType);
+      await this.send({
+        to: this.coCreateNotifyEmail,
+        template: 'coCreateSubmitted',
+        ...c,
+      });
     });
   }
 

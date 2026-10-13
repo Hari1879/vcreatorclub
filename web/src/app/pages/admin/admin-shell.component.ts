@@ -3,6 +3,8 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { HttpErrorResponse } from '@angular/common/http';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService, errorMessage } from '../../core/api.service';
+import { CoCreateApi } from '../../core/co-create.api';
+import { ToastService } from '../../core/toast.service';
 import { signInUrl } from '../../core/constants';
 import { AdminRole } from '../../core/models';
 import { I } from '../../shared/icons';
@@ -37,6 +39,9 @@ const ROLE_LABEL: Record<AdminRole, string> = { super_admin: 'Super Admin', admi
                 <a [routerLink]="n.path" routerLinkActive="!bg-vcc-blue !text-white shadow-lg shadow-vcc-blue/30" [routerLinkActiveOptions]="{ exact: n.exact }"
                    class="flex items-center gap-3 rounded-lg px-4 py-3 text-[15px] text-vcc-gray-light transition hover:bg-white/5 hover:text-white">
                   <lucide-icon [img]="n.icon" [size]="20" /> {{ n.label }}
+                  @if (n.badge && n.badge() > 0) {
+                    <span class="ml-auto rounded-full bg-amber-400 px-2 py-0.5 text-xs font-bold text-vcc-navy" [attr.aria-label]="n.badge() + ' pending'">{{ n.badge() }}</span>
+                  }
                 </a>
               }
             </nav>
@@ -60,6 +65,14 @@ const ROLE_LABEL: Record<AdminRole, string> = { super_admin: 'Super Admin', admi
               }
               <router-outlet />
             </main>
+          </div>
+          <div class="fixed bottom-6 right-6 z-[60] flex w-80 flex-col gap-2" aria-live="assertive">
+            @for (t of toast.toasts(); track t.id) {
+              <div [class]="'flex items-start justify-between gap-3 rounded-lg px-4 py-3 text-sm text-white shadow-lg ' + (t.kind === 'error' ? 'bg-red-600' : 'bg-green-600')" role="alert">
+                <span>{{ t.text }}</span>
+                <button class="opacity-80 hover:opacity-100" (click)="toast.dismiss(t.id)" aria-label="Dismiss">✕</button>
+              </div>
+            }
           </div>
         </div>
       }
@@ -89,17 +102,20 @@ const ROLE_LABEL: Record<AdminRole, string> = { super_admin: 'Super Admin', admi
 export class AdminShellComponent implements OnInit {
   protected store = inject(AdminStore);
   private api = inject(ApiService);
+  private coApi = inject(CoCreateApi);
+  protected toast = inject(ToastService);
   private router = inject(Router);
   protected readonly I = I;
   protected state = signal<State>('loading');
   protected error = signal('');
   protected signIn = signInUrl('/admin');
 
-  protected nav = [
+  protected nav: { path: string; label: string; icon: typeof I.Users; exact: boolean; superOnly?: boolean; badge?: () => number }[] = [
     { path: '/admin', label: 'Dashboard', icon: I.LayoutDashboard, exact: true },
     { path: '/admin/creators', label: 'Creators', icon: I.Users, exact: false },
     { path: '/admin/campaigns', label: 'Campaigns', icon: I.Megaphone, exact: false },
     { path: '/admin/tokens', label: 'QR Tokens', icon: I.QrCode, exact: false },
+    { path: '/admin/co-create', label: 'Co-Create Requests', icon: I.Handshake, exact: false, badge: () => this.store.coCreatePending() },
     { path: '/admin/users', label: 'Users', icon: I.UserCog, exact: false, superOnly: true },
   ];
 
@@ -119,6 +135,7 @@ export class AdminShellComponent implements OnInit {
       const a = await this.api.adminMe();
       this.store.admin.set({ name: a.name, email: a.email, role: a.role as AdminRole });
       this.state.set('ready');
+      this.coApi.summary().then((r) => this.store.coCreatePending.set(r.pending)).catch(() => undefined);
     } catch (e) {
       const status = e instanceof HttpErrorResponse ? e.status : 0;
       if (status === 401) this.state.set('signed-out');

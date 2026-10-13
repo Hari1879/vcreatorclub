@@ -9,6 +9,7 @@ import { EnrollmentModule } from './enrollment/enrollment.module';
 import { CreatorModule } from './creator/creator.module';
 import { AdminModule } from './admin/admin.module';
 import { UsersModule } from './users/users.module';
+import { CoCreateModule } from './co-create/co-create.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -24,6 +25,7 @@ import { HealthController } from './health.controller';
     CreatorModule,
     AdminModule,
     UsersModule,
+    CoCreateModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

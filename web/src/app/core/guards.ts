@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, CanDeactivateFn, Router } from '@angular/router';
 import { ApiService } from './api.service';
 import { signInUrl } from './constants';
 
@@ -19,3 +19,9 @@ export const creatorGuard: CanActivateFn = async (_route, state) => {
     return router.createUrlTree(['/']);
   }
 };
+
+export interface HasUnsavedChanges {
+  hasUnsavedChanges(): boolean;
+}
+export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (c) =>
+  !c.hasUnsavedChanges() || window.confirm('You have unsaved changes. Leave this page?');

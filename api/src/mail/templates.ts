@@ -215,3 +215,19 @@ export function adminEnrollmentAlert(
     button: { label: 'Review in admin', url: `${appUrl()}/admin` },
   });
 }
+
+export function coCreateSubmitted(
+  creatorName: string,
+  title: string,
+  supportType: string,
+): EmailContent {
+  return render({
+    subject: `New Co-Create request: ${title}`,
+    heading: 'New Co-Create request',
+    paragraphs: [
+      `${creatorName} submitted a Co-Create request: ${title} (support type: ${supportType}).`,
+      'It is waiting for V Team review.',
+    ],
+    button: { label: 'Review request', url: `${appUrl()}/admin/co-create` },
+  });
+}

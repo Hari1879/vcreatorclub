@@ -41,6 +41,8 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
       ADMIN_ALERT_EMAILS: ${ADMIN_ALERT_EMAILS:-}
+      CO_CREATE_ENC_KEY: ${CO_CREATE_ENC_KEY:-}
+      CO_CREATE_NOTIFY_EMAIL: ${CO_CREATE_NOTIFY_EMAIL:-}
   web:
     build: ./web
     restart: unless-stopped

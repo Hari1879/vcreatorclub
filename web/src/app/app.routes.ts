@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { creatorGuard } from './core/guards';
+import { creatorGuard, unsavedChangesGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -43,6 +43,13 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'co-create',
+    title: 'VCC — Co-Create',
+    canActivate: [creatorGuard],
+    canDeactivate: [unsavedChangesGuard],
+    loadComponent: () => import('./pages/co-create/co-create.component').then((m) => m.CoCreateComponent),
+  },
+  {
     path: 'admin',
     loadComponent: () => import('./pages/admin/admin-shell.component').then((m) => m.AdminShellComponent),
     children: [
@@ -63,6 +70,18 @@ export const routes: Routes = [
         title: 'VCC Admin — Campaigns',
         loadComponent: () =>
           import('./pages/admin/admin-campaigns.component').then((m) => m.AdminCampaignsComponent),
+      },
+      {
+        path: 'co-create',
+        title: 'VCC Admin — Co-Create Requests',
+        loadComponent: () =>
+          import('./pages/admin/admin-co-create-list.component').then((m) => m.AdminCoCreateListComponent),
+      },
+      {
+        path: 'co-create/:id',
+        title: 'VCC Admin — Co-Create Request',
+        loadComponent: () =>
+          import('./pages/admin/admin-co-create-detail.component').then((m) => m.AdminCoCreateDetailComponent),
       },
       {
         path: 'users',

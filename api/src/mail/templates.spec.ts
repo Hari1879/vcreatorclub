@@ -23,6 +23,7 @@ const all = () => [
   ),
   t.custom('Asha', 'Hello', 'A message\nwith two lines'),
   t.adminEnrollmentAlert('Asha', 'Chennai', 12000, 'instagram'),
+  t.coCreateSubmitted('Asha', 'Idea', 'paid'),
 ];
 
 describe('escapeHtml', () => {

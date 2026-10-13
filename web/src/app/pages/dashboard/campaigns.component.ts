@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ApiService, errorMessage } from '../../core/api.service';
 import { Campaign } from '../../core/models';
@@ -7,9 +8,12 @@ import { CampaignCardComponent } from './campaign-card.component';
 @Component({
   selector: 'vcc-creator-campaigns',
   standalone: true,
-  imports: [CampaignCardComponent, SpinnerComponent],
+  imports: [RouterLink, CampaignCardComponent, SpinnerComponent],
   template: `
-    <h1 class="mb-5 text-4xl font-bold">Campaigns</h1>
+    <div class="mb-5 flex items-center justify-between gap-3">
+      <h1 class="text-4xl font-bold">Campaigns</h1>
+      <a routerLink="/co-create" class="btn-primary px-4 py-2 text-sm">Co-Create</a>
+    </div>
     @if (loading()) {
       <div class="grid place-items-center py-16"><vcc-spinner [size]="30" /></div>
     } @else if (error()) {
