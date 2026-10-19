@@ -23,6 +23,7 @@ import {
   ApproveDto,
   AssignmentUpdateDto,
   CampaignDto,
+  CampaignLimitsDto,
   CampaignStatusDto,
   CreateTokenDto,
   ListCreatorsQuery,
@@ -127,6 +128,12 @@ export class AdminController {
   @AdminWrite()
   updateCampaign(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CampaignDto) {
     return this.admin.updateCampaign(id, dto);
+  }
+
+  @Patch('campaigns/:id/limits')
+  @AdminWrite()
+  updateCampaignLimits(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CampaignLimitsDto) {
+    return this.admin.updateCampaignLimits(id, dto);
   }
 
   @Put('campaigns/:id/banner')

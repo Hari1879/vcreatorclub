@@ -7,6 +7,7 @@ import { mapCampaign, mapProfile } from '../common/profile.mapper';
 import {
   AssignmentUpdateDto,
   CampaignDto,
+  CampaignLimitsDto,
   CreateTokenDto,
   ListCreatorsQuery,
   SendNotificationDto,
@@ -250,6 +251,27 @@ export class AdminService {
       [id, ...this.campaignCols(dto), status],
     );
     if (prev.status !== 'open' && row.status === 'open') await this.announceCampaign(row);
+    return mapCampaign(row);
+  }
+
+  async updateCampaignLimits(id: string, dto: CampaignLimitsDto) {
+    const sets: string[] = [];
+    const params: unknown[] = [id];
+    if (dto.deadline !== undefined) {
+      params.push(dto.deadline);
+      sets.push(`deadline = $${params.length}`);
+    }
+    if (dto.maxCreators !== undefined) {
+      params.push(dto.maxCreators);
+      sets.push(`max_creators = $${params.length}`);
+    }
+    if (!sets.length) throw new BadRequestException('Set an expiry date or user limit.');
+
+    const row = await this.db.one(
+      `update campaigns set ${sets.join(', ')} where id = $1 returning *`,
+      params,
+    );
+    if (!row) throw new NotFoundException();
     return mapCampaign(row);
   }
 

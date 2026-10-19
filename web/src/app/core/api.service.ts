@@ -93,6 +93,8 @@ export class ApiService {
   campaign = (id: string) => this.get<CampaignDetail>(`/admin/campaigns/${id}`);
   createCampaign = (body: unknown) => this.post<Campaign>('/admin/campaigns', body);
   updateCampaign = (id: string, body: unknown) => this.put<Campaign>(`/admin/campaigns/${id}`, body);
+  updateCampaignLimits = (id: string, body: { deadline: string | null; maxCreators: number | null }) =>
+    this.patch<Campaign>(`/admin/campaigns/${id}/limits`, body);
   uploadCampaignBanner = (id: string, file: File) =>
     firstValueFrom(
       this.http.put<Campaign>(`/api/admin/campaigns/${id}/banner`, file, { headers: { 'Content-Type': file.type } }),

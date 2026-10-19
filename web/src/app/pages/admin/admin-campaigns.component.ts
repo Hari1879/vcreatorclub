@@ -82,6 +82,7 @@ const emptyDraft = (): Draft => ({
               <button class="btn-ghost btn-sm" (click)="openDetail(c.id)">Creators</button>
               @if (store.canWrite()) {
                 <button class="btn-ghost btn-sm" (click)="openEdit(c)"><lucide-icon [img]="I.Pencil" [size]="14" /> Edit</button>
+                <button class="btn-ghost btn-sm" (click)="openLimits(c)">Edit expiry / users</button>
                 @if (c.status === 'draft' || c.status === 'closed') {
                   <button class="btn-primary btn-sm" [disabled]="busy()" (click)="setStatus(c, 'open')">{{ c.status === 'draft' ? 'Publish' : 'Reopen' }}</button>
                 }
@@ -167,6 +168,32 @@ const emptyDraft = (): Draft => ({
       </vcc-modal>
     }
 
+    @if (limitsTarget(); as c) {
+      <vcc-modal title="Edit campaign expiry and users" [width]="520" (closed)="limitsTarget.set(null)">
+        <div class="space-y-4">
+          <p class="text-sm text-gray-600">
+            These changes affect campaign availability and future sign-ups only. Existing creators and their data will not be changed.
+          </p>
+          <label class="block">
+            <span class="field-label-light">Expiry date</span>
+            <input class="input" type="date" [(ngModel)]="limitDeadline" />
+          </label>
+          <label class="block">
+            <span class="field-label-light">Maximum users</span>
+            <input class="input" type="number" min="1" max="10000" [(ngModel)]="limitMaxCreators" placeholder="No limit" />
+            <span class="mt-1 block text-xs text-gray-500">
+              Existing creator records: {{ c.assignmentCount ?? 0 }}. Reducing the limit will not remove any records.
+            </span>
+          </label>
+          @if (limitsError()) { <p class="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{{ limitsError() }}</p> }
+          <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+            <button class="btn-ghost" [disabled]="busy()" (click)="limitsTarget.set(null)">Cancel</button>
+            <button class="btn-primary" [disabled]="busy()" (click)="saveLimits()">Save limits</button>
+          </div>
+        </div>
+      </vcc-modal>
+    }
+
     <!-- Delete confirm -->
     @if (deleteTarget(); as c) {
       <vcc-modal title="Delete campaign" (closed)="deleteTarget.set(null)">
@@ -241,6 +268,10 @@ export class AdminCampaignsComponent implements OnInit {
   protected deleteTarget = signal<Campaign | null>(null);
   protected detailOpen = signal(false);
   protected detail = signal<CampaignDetail | null>(null);
+  protected limitsTarget = signal<Campaign | null>(null);
+  protected limitDeadline = '';
+  protected limitMaxCreators: number | null = null;
+  protected limitsError = signal<string | null>(null);
 
   async ngOnInit() {
     await this.load();
@@ -308,6 +339,42 @@ export class AdminCampaignsComponent implements OnInit {
     this.editingStatus.set(c.status);
     this.formError.set(null);
     this.formOpen.set(true);
+  }
+
+  protected openLimits(c: Campaign) {
+    this.limitsTarget.set(c);
+    this.limitDeadline = c.deadline ? toLocalDate(c.deadline) : '';
+    this.limitMaxCreators = c.maxCreators;
+    this.limitsError.set(null);
+  }
+
+  protected async saveLimits() {
+    const campaign = this.limitsTarget();
+    if (!campaign) return;
+    if (
+      this.limitMaxCreators !== null &&
+      `${this.limitMaxCreators}` !== '' &&
+      (!Number.isInteger(Number(this.limitMaxCreators)) ||
+        Number(this.limitMaxCreators) < 1 ||
+        Number(this.limitMaxCreators) > 10_000)
+    ) {
+      this.limitsError.set('Maximum users must be between 1 and 10,000, or blank for no limit.');
+      return;
+    }
+    this.busy.set(true);
+    this.limitsError.set(null);
+    try {
+      await this.api.updateCampaignLimits(campaign.id, {
+        deadline: this.limitDeadline ? new Date(`${this.limitDeadline}T23:59:00+05:30`).toISOString() : null,
+        maxCreators: this.limitMaxCreators === null || `${this.limitMaxCreators}` === '' ? null : Number(this.limitMaxCreators),
+      });
+      this.limitsTarget.set(null);
+      await this.load();
+    } catch (e) {
+      this.limitsError.set(errorMessage(e));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   protected addTag(ev?: Event) {

@@ -67,6 +67,11 @@ export class CampaignDto {
   @IsOptional() @IsIn(['draft', 'open']) status?: 'draft' | 'open';
 }
 
+export class CampaignLimitsDto {
+  @IsOptional() @nullable() @IsDateString() deadline?: string | null;
+  @IsOptional() @nullable() @IsInt() @Min(1) @Max(10_000) maxCreators?: number | null;
+}
+
 export class CampaignStatusDto {
   @IsIn(CAMPAIGN_STATUSES as unknown as string[]) status!: string;
 }
