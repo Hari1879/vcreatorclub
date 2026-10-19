@@ -108,6 +108,8 @@ export class ApiService {
   createToken = (body: { label: string; isEventToken: boolean; maxUses: number; expiresAt: string }) =>
     this.post<EnrollmentToken>('/admin/tokens', body);
   setTokenActive = (id: string, isActive: boolean) => this.patch<EnrollmentToken>(`/admin/tokens/${id}`, { isActive });
+  updateToken = (id: string, body: { maxUses?: number; expiresAt?: string }) =>
+    this.patch<EnrollmentToken>(`/admin/tokens/${id}`, body);
   sendNotification = (body: {
     creatorIds?: string[];
     allApproved?: boolean;

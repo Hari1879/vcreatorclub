@@ -181,7 +181,7 @@ export class AdminController {
   @Patch('tokens/:id')
   @AdminWrite()
   updateToken(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTokenDto) {
-    return this.admin.setTokenActive(id, dto.isActive);
+    return this.admin.updateToken(id, dto);
   }
 
   // ---- notifications

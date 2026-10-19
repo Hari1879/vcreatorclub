@@ -12,6 +12,7 @@ import {
   ListCreatorsQuery,
   SendNotificationDto,
   UpdateCreatorDto,
+  UpdateTokenDto,
 } from './admin.dto';
 
 const TIER_LABEL: Record<string, string> = {
@@ -421,16 +422,27 @@ export class AdminService {
     return mapToken(row);
   }
 
-  async setTokenActive(id: string, isActive: boolean) {
+  /** Only changes the fields provided; used_count and existing enrollments are never touched. */
+  async updateToken(id: string, dto: UpdateTokenDto) {
+    const expires = dto.expiresAt ? new Date(dto.expiresAt) : null;
+    if (expires && expires <= new Date()) throw new BadRequestException('Expiry must be in the future.');
     const row = await this.db.one(
-      `update enrollment_tokens set is_active = $2 where id = $1
+      `update enrollment_tokens
+          set is_active = coalesce($2, is_active),
+              max_uses = coalesce($3, max_uses),
+              expires_at = coalesce($4, expires_at)
+        where id = $1 and ($3::int is null or $3::int >= used_count)
        returning *, case when not is_active then 'inactive'
                          when expires_at <= now() then 'expired'
                          when used_count >= max_uses then 'exhausted'
                          else 'active' end as state`,
-      [id, isActive],
+      [id, dto.isActive ?? null, dto.maxUses ?? null, expires],
     );
-    if (!row) throw new NotFoundException();
+    if (!row) {
+      const exists = await this.db.one('select used_count from enrollment_tokens where id = $1', [id]);
+      if (!exists) throw new NotFoundException();
+      throw new BadRequestException(`Max uses cannot be lower than the ${exists.used_count} already used.`);
+    }
     return mapToken(row);
   }
 

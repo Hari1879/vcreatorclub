@@ -89,7 +89,9 @@ export class CreateTokenDto {
 }
 
 export class UpdateTokenDto {
-  @IsBoolean() isActive!: boolean;
+  @IsOptional() @IsBoolean() isActive?: boolean;
+  @IsOptional() @IsInt() @Min(1) @Max(10_000) maxUses?: number;
+  @IsOptional() @IsDateString() expiresAt?: string;
 }
 
 export class SendNotificationDto {

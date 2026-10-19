@@ -87,7 +87,7 @@ function daysFromNow(n: number) {
               </thead>
               <tbody>
                 @for (t of tokens(); track t.id) {
-                  <tr class="cursor-pointer border-t border-gray-100 hover:bg-slate-50" [class.bg-blue-50]="selected()?.id === t.id" (click)="selected.set(t)">
+                  <tr class="cursor-pointer border-t border-gray-100 hover:bg-slate-50" [class.bg-blue-50]="selected()?.id === t.id" (click)="selected.set(t); editing.set(false)">
                     <td class="px-6 py-3 font-semibold text-gray-900">{{ t.label || 'Untitled' }}</td>
                     <td class="px-3 py-3">{{ t.isEventToken ? 'Event' : 'Individual' }}</td>
                     <td class="px-3 py-3">{{ t.usedCount }} / {{ t.maxUses }}</td>
@@ -128,6 +128,25 @@ function daysFromNow(n: number) {
               <div><dt class="text-gray-500">Status</dt><dd><span class="pill capitalize" [ngClass]="stateCls(t.state)">{{ t.state }}</span></dd></div>
               <div class="col-span-2"><dt class="text-gray-500">Expires</dt><dd class="font-semibold">{{ t.expiresAt | date: 'EEE, d MMM y, h:mm a' }}</dd></div>
             </dl>
+            @if (store.canWrite()) {
+              @if (editing()) {
+                <div class="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
+                  <label><span class="field-label-light">Max uses</span>
+                    <input class="input" type="number" [min]="t.usedCount || 1" max="10000" [(ngModel)]="editMaxUses" />
+                  </label>
+                  <label><span class="field-label-light">Expiry date</span>
+                    <input class="input" type="date" [(ngModel)]="editExpiry" [min]="today" />
+                  </label>
+                  <p class="col-span-2 text-xs text-gray-500">Existing sign-ups are not affected. Expires at 11:59 PM India time.</p>
+                  <div class="col-span-2 flex justify-end gap-2">
+                    <button class="btn-ghost btn-sm" (click)="editing.set(false)">Cancel</button>
+                    <button class="btn-primary btn-sm" [disabled]="busy()" (click)="saveEdit(t)">Save</button>
+                  </div>
+                </div>
+              } @else {
+                <button class="btn-ghost mt-4 w-full" (click)="startEdit(t)">Edit expiry &amp; max uses</button>
+              }
+            }
             @if (!isProdOrigin) {
               <p class="mt-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
                 This QR points to {{ origin }}. Generate your printed QR from https://vcreatorclub.in so it links to the live site.
@@ -155,7 +174,9 @@ export class AdminTokensComponent implements OnInit {
   protected error = signal<string | null>(null);
   protected copied = signal(false);
   protected formOpen = signal(false);
-
+  protected editing = signal(false);
+  protected editMaxUses = 1;
+  protected editExpiry = '';
   protected label = '';
   protected isEvent = false;
   protected maxUses = 1;
@@ -212,6 +233,34 @@ export class AdminTokensComponent implements OnInit {
       this.formOpen.set(false);
       this.label = '';
       this.setEvent(false);
+      await this.load();
+    } catch (e) {
+      this.error.set(errorMessage(e));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected startEdit(t: EnrollmentToken) {
+    this.editMaxUses = t.maxUses;
+    this.editExpiry = new Date(t.expiresAt).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    this.error.set(null);
+    this.editing.set(true);
+  }
+
+  protected async saveEdit(t: EnrollmentToken) {
+    this.error.set(null);
+    const maxUses = Math.floor(Number(this.editMaxUses));
+    if (!maxUses || maxUses < t.usedCount) return this.error.set(`Max uses cannot be lower than the ${t.usedCount} already used.`);
+    if (!this.editExpiry) return this.error.set('Choose an expiry date.');
+    this.busy.set(true);
+    try {
+      const updated = await this.api.updateToken(t.id, {
+        maxUses,
+        expiresAt: new Date(`${this.editExpiry}T23:59:00+05:30`).toISOString(),
+      });
+      this.selected.set(updated);
+      this.editing.set(false);
       await this.load();
     } catch (e) {
       this.error.set(errorMessage(e));
