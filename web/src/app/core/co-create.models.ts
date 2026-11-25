@@ -66,6 +66,7 @@ export interface UploadResult {
 }
 
 export interface TermsClause {
+  id?: string;
   number: number;
   title: string;
   body: string;

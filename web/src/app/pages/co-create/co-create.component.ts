@@ -583,7 +583,9 @@ export class CoCreateComponent implements OnInit, HasUnsavedChanges {
       if (this.invalid().length) this.jumpTo(this.invalid()[0]);
       return;
     }
-    const body = toPayload(this.form, this.campaignId, this.terms()?.version ?? null);
+    const t = this.terms();
+    const clauseIds = (t?.clauses ?? []).map((c) => c.id ?? String(c.number));
+    const body = toPayload(this.form, this.campaignId, t?.version ?? null, clauseIds);
     const json = JSON.stringify(body);
     if (!this.lastKey || json !== this.lastPayload) {
       this.lastKey = crypto.randomUUID();

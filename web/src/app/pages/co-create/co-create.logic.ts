@@ -319,11 +319,107 @@ export function totalPieces(counts: Record<string, number | null>): number {
   return Object.values(counts).reduce<number>((n, v) => n + (v ?? 0), 0);
 }
 
-/** Request body. Disabled (hidden) controls are omitted by `form.value`; the confirm field never leaves the browser. */
-export function toPayload(form: CoCreateForm, campaignId: string | null, termsVersion: string | null) {
-  const { s5, ...rest } = form.value;
-  const bank = s5 ? (({ accountConfirm: _drop, ...b }) => b)(s5) : undefined;
-  return { campaignId, termsVersion, ...rest, ...(bank ? { s5: bank } : {}) };
+// Form option values -> API enum values (api/src/co-create/constants.ts). The form keeps its own values so saved drafts stay valid.
+const API_COVERS: Record<string, string> = { video_editing: 'editing', crew_fees: 'crew' };
+const API_DURATION: Record<string, string> = { '1_3_days': 'd1_3', '4_7_days': 'd4_7', '8_14_days': 'd8_14', '15_plus_days': 'd15_plus' };
+const API_CONTENT: Record<string, string> = {
+  instagram_reel: 'ig_reel', instagram_post: 'ig_post', instagram_stories: 'ig_stories', youtube_long: 'yt_long', youtube_short: 'yt_short',
+};
+const API_REVIEW_DAYS: Record<number, string> = { 1: 'd1', 2: 'd2', 3: 'd3', 5: 'd5_plus' };
+const mapVal = (m: Record<string, string>, v: string) => m[v] ?? v;
+const yesNo = (v: string | undefined) => (v === 'yes' ? true : v === 'no' ? false : undefined);
+
+/**
+ * Flat request body in the shape the API validates (api/src/co-create/validation.ts).
+ * Only active (enabled) controls are read, so hidden branches are left out.
+ */
+export function toPayload(
+  form: CoCreateForm,
+  campaignId: string | null,
+  termsVersion: string | null,
+  termsClauseIds: string[] = [],
+) {
+  const v = form.getRawValue();
+  const vis = visibility(v);
+  const { s1, s2, s3, s4, s5, s6 } = v;
+
+  const body: Record<string, unknown> = {
+    campaignId,
+    termsVersion,
+    termsAccepted: s6.agreed === true,
+    termsClauseIds,
+    title: s1.title,
+    ideaDescription: s1.idea,
+    vivoProduct: s1.product,
+    ideaDocFileId: s1.ideaDoc,
+    supportType: s1.supportType,
+
+    contentTypes: s3.contentTypes.map((t) => mapVal(API_CONTENT, t)),
+    deliverablesBreakdown: Object.fromEntries(
+      s3.contentTypes.map((t) => [mapVal(API_CONTENT, t), (s3.counts as Record<string, number | null>)[t] ?? null]),
+    ),
+    productVisibility: s3.featured,
+    contentConcept: s3.concept,
+    willTag: yesNo(s3.tag),
+    shootDate: s3.shootDate,
+    postingDate: s3.postDate,
+    submitForReview: yesNo(s3.reviewBefore),
+
+    primaryPlatform: s4.platform,
+    estimatedReach: s4.reach,
+    competingBrandActive: yesNo(s4.competing),
+  };
+  if (vis.otherType) body['contentTypeOther'] = s3.otherType;
+  if (vis.noTagReason) body['noTagReason'] = s3.noTagReason;
+  if (vis.reviewAck) body['reviewReconfirmed'] = s3.reviewAck === true;
+  if (vis.reviewDays && s3.reviewDays !== null) body['reviewDaysBefore'] = API_REVIEW_DAYS[s3.reviewDays];
+  if (vis.competingDetails) body['competingBrandDetails'] = s4.competingDetails;
+
+  if (vis.a) {
+    Object.assign(body, {
+      feeAmountInr: s2.a.fee,
+      feeCovers: s2.a.covers.map((c) => mapVal(API_COVERS, c)),
+      feeJustification: s2.a.why,
+      paymentMilestone: s2.a.milestone,
+      gstRegistered: yesNo(s2.a.gstRegistered),
+    });
+    if (vis.otherCosts) body['feeOtherItems'] = s2.a.otherCosts;
+    if (vis.gst) body['gstNumber'] = s2.a.gstNumber;
+  }
+  if (vis.b) {
+    Object.assign(body, {
+      borrowProduct: s2.b.product,
+      borrowVariant: s2.b.variant,
+      borrowVariantReason: s2.b.why,
+      borrowUnits: s2.b.units,
+      borrowDuration: mapVal(API_DURATION, s2.b.duration),
+      borrowLocationType: s2.b.location,
+      borrowReturnCommitment: s2.b.returnCommitment,
+    });
+    if (vis.locationDetails) body['borrowLocations'] = s2.b.locationDetails;
+  }
+  if (vis.c) {
+    Object.assign(body, {
+      giftProduct: s2.c.product,
+      giftVariant: s2.c.variant,
+      giftVariantReason: s2.c.why,
+      giftUnits: s2.c.units,
+    });
+    if (vis.unitsReason) body['giftMultiUnitReason'] = s2.c.unitsReason;
+  }
+  if (vis.s5) {
+    body['payment'] = {
+      accountHolderName: s5.holder,
+      bankName: s5.bank,
+      accountNumber: s5.account,
+      accountNumberConfirm: s5.accountConfirm,
+      ifsc: s5.ifsc,
+      accountType: s5.accountType,
+      upiId: s5.upi || null,
+      ...(vis.gst ? { gstProformaFileId: s5.gstProforma } : {}),
+    };
+  }
+  return body;
 }
 
 // ---- draft (never contains Section 5, uploaded files or the terms tick)
